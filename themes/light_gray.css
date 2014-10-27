@@ -41,14 +41,13 @@ img {
 }
 .main figure a.image {
   display: inline-block;
-  padding: 3px;
   margin: 0 0 10px 0;
   min-width: 200px;
   outline: none;
-  /*background: url(/images/loading_cat.gif) no-repeat center center;*/
 }
 .main figure img {
   min-width: 200px;
+  background: rgba(100, 100, 100, .6);
 }
 .main figure figcaption {
   font-size: 30px;
@@ -74,7 +73,7 @@ img {
 
 nav .arrow {
   position: absolute;
-  top: calc(50% - 60px - 4em); /* 50% of hight, minus arrow height & caption */
+  top: 25%;
   width: 0;
   height: 0;
   opacity: .2;

@@ -49,6 +49,7 @@ img {
 }
 .main figure img {
   min-width: 200px;
+  background: rgba(100, 100, 100, .6);
 }
 .main figure figcaption {
   font-size: 30px;
@@ -84,7 +85,7 @@ nav .arrow.right {
   border-bottom: 60px solid transparent;
   border-left: 60px solid rgba(109, 121, 126, 1);
 
-  top: 20%;
+  top: 25%;
   right: 0;
 }
 nav .arrow.left {
@@ -92,7 +93,7 @@ nav .arrow.left {
   border-bottom: 60px solid transparent;
   border-right:60px solid rgba(109, 121, 126, 1);
 
-  top: 20%;
+  top: 25%;
   left: 0;
 }
 nav div:hover {
