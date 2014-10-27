@@ -1,9 +1,13 @@
 
 html {
   background: #fff url(/images/sunburst_pink.png) no-repeat;
-  background-position: 50% 80%;
-  height: 100%;
+  background-position: center center;
   width: 100%;
+}
+
+body {
+  height: 100vh;
+  margin: 0 10px;
 }
 
 a, a:link {
@@ -31,14 +35,22 @@ img {
 .main {
   position: relative;
   min-width: 500px;
-  margin: 0 auto 20px;
-  padding: 0 65px 15px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 65px;
+  text-align: center;
 }
-.main.loading {
-  visibility: hidden;
+.main:before { /* to center image (http://css-tricks.com/centering-in-the-unknown/) */
+  content: '';
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+  margin-right: -0.25em; /* Adjusts for spacing */
 }
 .main figure {
+  display: inline-block;
   text-align: center;
+  vertical-align: middle;
 }
 .main figure a.image {
   display: inline-block;
@@ -46,7 +58,6 @@ img {
   margin: 0 0 10px 0;
   min-width: 200px;
   outline: none;
-  /*background: url(/images/loading_cat.gif) no-repeat center center;*/
 }
 .main figure img {
   min-width: 200px;
@@ -73,10 +84,14 @@ img {
 .main figure cite a:last-child:after {
   content: '';
 }
-
+nav {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 0; right: 0;
+}
 nav .arrow {
   position: absolute;
-  top: 25%;
+  top: calc(50% - 120px);
   width: 0;
   height: 0;
   opacity: .2;
