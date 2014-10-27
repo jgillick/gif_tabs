@@ -255,7 +255,7 @@ $(document).ready(function(){
 
     // Reddit
     if (settings.reddit !== false) {
-      $.get('http://www.reddit.com/r/gifs/.json?limit=100')
+      $.get('http://www.reddit.com/r/gifs/.json?limit=150')
       .then(function(xhr){
 
         xhr.data.children.forEach(function(gif){
@@ -289,7 +289,7 @@ $(document).ready(function(){
 
     // Giphy
     if (settings.giphy !== false) {
-      $.get('http://api.giphy.com/v1/gifs/trending?api_key=dc6zaTOxFJmzC&limit=100')
+      $.get('http://api.giphy.com/v1/gifs/trending?api_key=11zvNWrJ4cOCJi&limit=150')
       .then(function(xhr){
 
         xhr.data.forEach(function(gif){
