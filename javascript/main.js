@@ -408,9 +408,11 @@ $(document).ready(function(){
     if (gif.title && gif.title != '') {
       container.addClass('has-title');
       container.find('figcaption').text(gif.title);
+      document.title = "New Tab ("+ gif.title +")";
     } else {
       container.removeClass('has-title');
       container.find('figcaption').text('');
+      document.title = "New Tab";
     }
 
     // Sources
