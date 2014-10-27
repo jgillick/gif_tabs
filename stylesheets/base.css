@@ -60,8 +60,8 @@ body {
   bottom: 12px;
   right: 5px;
   z-index: 100;
-  width: 73px;
-  height: 27px;
+  width: 50px;
+  height: 18px;
   padding: 2px;
   opacity: .5;
   background: rgba(255, 255, 255, .8);
@@ -69,6 +69,8 @@ body {
 #powered-by-giphy img {
   border: none;
   box-shadow: none;
+  width: 100%;
+  height: 100%;
 }
 
 /*
