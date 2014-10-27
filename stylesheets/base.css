@@ -53,6 +53,25 @@ body {
 }
 
 /*
+  Powered by Giphy
+*/
+#powered-by-giphy {
+  position: absolute;
+  bottom: 12px;
+  right: 5px;
+  z-index: 100;
+  width: 73px;
+  height: 27px;
+  padding: 2px;
+  opacity: .5;
+  background: rgba(255, 255, 255, .8);
+}
+#powered-by-giphy img {
+  border: none;
+  box-shadow: none;
+}
+
+/*
   Hide form used for browser cache
 */
 form.browser-cache {

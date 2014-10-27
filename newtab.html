@@ -13,6 +13,26 @@
 </head>
 <body>
 
+  <section class="main loading">
+    <nav>
+      <div class="arrow left" title="Previous gif">Previous</div>
+      <div class="arrow right" title="New random gif">Next</div>
+    </nav>
+    <figure>
+      <a href="#" class="image">
+        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==
+" /></a>
+      <figcaption>Loading...</figcaption>
+      <cite>Source: <span></span></cite>
+    </figure>
+  </section>
+
+  <section class="history empty">
+    <h1>Recent Gifs</h1>
+    <ul></ul>
+  </section>
+
+
   <form class="settings">
     <h1>Settings</h1>
     <ol>
@@ -36,24 +56,11 @@
       </li>
     </ol>
   </form>
-  <section class="main loading">
-    <nav>
-      <div class="arrow left" title="Previous gif">Previous</div>
-      <div class="arrow right" title="New random gif">Next</div>
-    </nav>
-    <figure>
-      <a href="#" class="image">
-        <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==
-" /></a>
-      <figcaption>Loading...</figcaption>
-      <cite>Source: <span></span></cite>
-    </figure>
-  </section>
 
-  <section class="history empty">
-    <h1>Recent Gifs</h1>
-    <ul></ul>
-  </section>
+  <div id="powered-by-giphy">
+    <a href="http://giphy.com">
+      <img src="/images/powered-by-giphy.gif" width="73" height="27" alt="Powered by Giphy" /></a>
+  </div>
 
   <!-- For back button recall -->
   <form class="browser-cache">
