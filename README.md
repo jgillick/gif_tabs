@@ -1,6 +1,8 @@
-# Giffy Tabs
+# GIF Tabs
 
 A chrome extension that shows you a new animated gif for every new tab.
+
+(inspired by the great [Animated Tabs](https://chrome.google.com/webstore/detail/animatedtabs/kenhfdoiondldpcoajdbackbnmehgahl?hl=en) extension)
 
 ## Features
 

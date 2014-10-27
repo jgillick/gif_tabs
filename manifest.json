@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
 
-  "name": "GiffyTabs",
-  "description": "Shows you a random animated Gif in every new tab",
+  "name": "GIF Tabs",
+  "description": "Shows you a random animated gif in every new tab",
   "version": "1.0",
   "chrome_url_overrides": {
     "newtab": "newtab.html"
