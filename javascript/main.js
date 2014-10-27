@@ -171,7 +171,7 @@ $(document).ready(function(){
   function updateSettings() {
 
     // Defaults
-    settings = _.defaults(settings, {
+    settings = _.defaults(settings || {}, {
       theme: 'light_gray',
       giphy: true,
       reddit: true
