@@ -310,7 +310,7 @@ $(document).ready(function(){
           gifs.unshift({
             id: id,
             url: gif.images.original.url,
-            thumb: gif.images.fixed_height.url,
+            thumb: gif.images.fixed_height_still.url,
             sources: sources,
             feed: 'giphy',
             title: gif.title
@@ -473,9 +473,11 @@ $(document).ready(function(){
         i = 0;
 
     // Adjust the history range
-    if ((historyIndex >= historyStart + 4)
-        || (historyIndex <= historyStart && historyIndex > 0)) {
-      historyStart = historyIndex - 2;
+    if (historyIndex > historyStart + 4) {
+      historyStart++;
+    }
+    else if (historyIndex < historyStart && historyIndex > 0) {
+      historyStart--;
     }
 
     // Keep historyStart within bounds
@@ -498,7 +500,7 @@ $(document).ready(function(){
       }
 
       // Reuse list item
-      if (item = elements.get(index)) {
+      if (item = elements.get(i)) {
         item = $(item);
         img = item.find('img');
 
@@ -566,16 +568,15 @@ $(document).ready(function(){
     class "fits-view"
   */
   function setWindowSizing() {
-    var viewport = $( window ).height(),
-        body = $(document.body),
-        main = $('.main'),
-        history = $('.history'),
-        buffer = 20;
+    var viewport = $(window).height(),
+        body = $(document.body);
 
     body.removeClass('fits-view');
 
-    // The body height is less than the viewport
-    if (body.outerHeight(true) < viewport) {
+    console.log(viewport, $(document).height(), $(body).outerHeight(true));
+
+    // The document fits in the viewport
+    if (viewport >= $(document).height()) {
       body.addClass('fits-view');
     }
   }
