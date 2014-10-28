@@ -200,6 +200,7 @@ nav div:hover {
   vertical-align: middle;
   cursor: pointer;
   border: none;
+  background: rgba(100, 100, 100, .6);
   transition: opacity .1s;
 }
 .history ul li img.loading {

@@ -29,6 +29,7 @@ img {
 */
 .main {
   position: relative;
+  min-height: 200px;
   min-width: 500px;
   margin: 0 auto 20px;
   padding: 0 65px 15px;
@@ -73,7 +74,7 @@ img {
 
 nav .arrow {
   position: absolute;
-  top: 25%;
+  top: 80px;
   width: 0;
   height: 0;
   opacity: .2;
@@ -137,6 +138,7 @@ nav div:hover {
   cursor: pointer;
   border: none;
   transition: opacity .1s;
+  background: rgba(100, 100, 100, .6);
 }
 .history ul li img.loading {
   opacity: 0;
