@@ -32,7 +32,7 @@ body {
   opacity: .1;
 }
 .settings:hover {
-  padding-top: 35px;
+  padding-top: 40px;
   background: #dedede;
 }
 .settings:hover h1 {
