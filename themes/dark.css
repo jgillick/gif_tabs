@@ -1,0 +1,189 @@
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  margin: 0;
+  padding: 60px 30px 0;
+  color: #999;
+  background-color: #666;
+  background-image: linear-gradient(#000, #666);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  box-sizing: border-box;
+}
+
+a, a:link {
+  color: #4c6096;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+h1 {
+  font-weight: normal;
+  text-shadow: 0 1px 2px #fff;
+}
+
+.main img,
+.history img {
+  border: 1px solid #999;
+  transition: box-shadow .5s;
+}
+.main a img:hover,
+.history img:hover {
+  box-shadow: 3px 3px 10px 1px rgba(150, 150, 150, 0.5)
+}
+
+.settings h1 {
+  background-image: url(/images/gear_white.png);
+  opacity: .3;
+}
+.settings:hover h1 {
+  background-image: url(/images/gear.png);
+}
+
+/*
+  Main image styling
+*/
+.main {
+  position: relative;
+  min-height: 200px;
+  min-width: 500px;
+  margin: 0 auto 20px;
+  padding: 0 65px 15px;
+}
+.main.loading {
+  visibility: hidden;
+}
+.main figure {
+  text-align: center;
+}
+.main figure a.image {
+  display: inline-block;
+  margin: 0 0 10px 0;
+  min-width: 200px;
+  outline: none;
+}
+.main figure img {
+  min-width: 200px;
+  background: rgba(100, 100, 100, .6);
+}
+.main figure figcaption {
+  font-size: 30px;
+  text-shadow: 0 1px 1px #000;
+}
+.main figure cite {
+  display: block;
+  font-size: 13px;
+  font-style: italic;
+  color: #999;
+  margin: 5px 0;
+}
+.main figure cite a {
+  color: #999;
+  padding: 0 3px;
+}
+.main figure cite a:after {
+  content: ',';
+}
+.main figure cite a:last-child:after {
+  content: '';
+}
+
+nav .arrow {
+  position: absolute;
+  top: 80px;
+  width: 0;
+  height: 0;
+  opacity: .2;
+  text-indent: -1234em;
+  border-top: 60px solid transparent;
+  border-bottom: 60px solid transparent;
+  transition: opacity .3s;
+}
+nav .arrow.right {
+  right: 0;
+  border-left: 60px solid rgba(218, 218, 218, 1);
+}
+nav .arrow.left {
+  left: 0;
+  border-right: 60px solid rgba(218, 218, 218, 1);
+}
+nav div:hover {
+  opacity: .8;
+  cursor: pointer;
+}
+
+/*
+  History
+*/
+.history {
+  margin: 0 -30px;
+  padding: 15px 0;
+  background: rgba(0, 0, 0, .15);
+}
+.history.empty {
+  display: none;
+}
+.history h1 {
+  display: none;
+}
+.history ul {
+  min-height: 100px;
+  width: 570px;
+  margin: 15px auto 0;
+  list-style-type: none;;
+}
+.history ul li {
+  display: inline-block;
+  padding: 0;
+  margin: 5px;
+  vertical-align: middle;
+  text-align: center;
+  height: 100px;
+  width: 100px;
+  overflow: hidden;
+  border: 1px solid #666;
+  transition: box-shadow .3s;
+  box-sizing: content-box;
+}
+.history ul li:hover {
+  box-shadow: 3px 3px 10px 1px rgba(150, 150, 150, 0.5)
+}
+.history ul li img {
+  height: 100px;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  border: none;
+  box-shadow: none;
+  transition: opacity .3s, box-shadow .3s;
+  background: rgba(100, 100, 100, .6);
+}
+.history ul li img.loading {
+  opacity: 0;
+}
+.history ul li img.loaded {
+  opacity: .1;
+}
+.history ul li img:hover {
+  opacity: 1;
+}
+.history ul li.selected img {
+  opacity: 1;
+}
+
+
+/**
+  Fix history to bottom of page
+  if the content is not overflowing
+*/
+body.fits-view .history {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: 0;
+}
