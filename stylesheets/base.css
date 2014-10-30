@@ -52,6 +52,50 @@ body {
   padding: 0;
 }
 
+/**
+  Hide things when loading
+*/
+.main.loading cite,
+.main.loading figcaption em {
+  display: none;
+}
+
+/*
+  Favorites Icon
+*/
+
+.main figcaption em {
+  position: relative;
+  display: inline-block;
+  line-height: inherit;
+  min-height: 22px;
+  width: 22px;
+  background: url(/images/favorite-star-gray.png) no-repeat;
+  background-position: 80% 60%;
+  background-size: 20px 20px;
+  text-indent: -1234em;
+  opacity: .2;
+  transition: opacity .3s;
+  cursor: pointer;
+}
+.main figcaption em:hover {
+  opacity: 1;
+}
+.main figcaption em:before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 0; right: 0;
+  background: url(/images/favorite-star.png) no-repeat center center;
+  background-size: 20px 20px;
+  background-size: contain;
+  opacity: 0;
+  transition: opacity .3s;
+}
+.main figcaption em:hover:before {
+  opacity: 1;
+}
+
 /*
   Powered by Giphy
 */

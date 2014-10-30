@@ -129,7 +129,6 @@ nav div:hover {
   border: 1px solid #999;
   box-shadow: 4px 6px 10px 0px rgba(90, 90, 90, .5);
   box-sizing: content-box;
-  transition: transform .08s;
 }
 .history ul li img {
   height: 120px;
@@ -137,21 +136,21 @@ nav div:hover {
   vertical-align: middle;
   cursor: pointer;
   border: none;
-  transition: opacity .1s;
+  transition: opacity .2s;
   background: rgba(100, 100, 100, .6);
 }
 .history ul li img.loading {
   opacity: 0;
 }
 .history ul li img.loaded {
+  opacity: .4;
+}
+.history ul li:hover img {
   opacity: 1;
 }
-.history ul li:hover {
-  transform:  translateY(-8px);
-}
-.history ul li.selected,
-.history ul li:hover.selected {
-  transform:  translateY(-8px);
+.history ul li.selected img,
+.history ul li:hover.selected img {
+  opacity: 1;
 }
 
 

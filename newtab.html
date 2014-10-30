@@ -10,7 +10,8 @@
   <script src="./javascript/jquery-2.1.1.min.js" type="text/javascript"></script>
   <script src="./javascript/underscore-min.js" type="text/javascript"></script>
 
-  <script src="./javascript/main.js" type="text/javascript"></script>
+  <script src="./javascript/gifs.js" type="text/javascript"></script>
+  <script src="./javascript/storage.js" type="text/javascript"></script>
 </head>
 <body>
 
@@ -19,7 +20,10 @@
       <a href="#" class="image">
         <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==
 " /></a>
-      <figcaption>Loading...</figcaption>
+      <figcaption>
+        <em class="make-favorite" title="Add to favorites">(add to favorites)</em>
+        <span>Loading...</span>
+      </figcaption>
       <cite>Source: <span></span></cite>
     </figure>
     <nav>
@@ -69,5 +73,8 @@
     <input type="text" id="gifid" value="" />
     <input type="text" id="history-index" value="" />
   </form>
+
+  <script src="./javascript/ui.js" type="text/javascript"></script>
+  <script src="./javascript/actions.js" type="text/javascript"></script>
 </body>
 </html>
