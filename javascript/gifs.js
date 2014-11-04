@@ -12,36 +12,42 @@ window.Gifs = {
   },
 
   /**
-    Return a gif from the gifs pool by ID
+    Return a gif from the gifs pool by ID or undefined if not found
   */
   forID: function(id) {
     if (Store.gifs.length == 0) {
-      return null;
+      return undefined;
     }
-
-    var found = _.find(Store.gifs, function(gif){
-      return gif.id == id;
-    });
-
-    return found;
+    return _.findWhere(Store.gifs, {id: id});
   },
 
   /**
     Return a random gif
   */
   random: function(){
-    var i = Math.round(Math.random() * Store.gifs.length),
-        gif = Store.gifs[i];
+    Store.gifs = _.compact(Store.gifs);
 
-    if (_.compact(gif).length == 0) {
+    var i, gif,
+        tries = 0,
+        numGifs = Store.gifs.length,
+        numHist = _.compact(Store.history).length;
+
+    // Be sure to remove any undefined parts of the gif array
+    if (Store.gifs.length == 0) {
       throw "No gifs are loaded yet";
     }
 
-    // Error
-    if (!gif) {
-      console.error('No gif at index', i);
-      return this.random();
-    }
+    // Loop until we find a good random one
+    do {
+      i = Math.round(Math.random() * numGifs),
+      gif = Store.gifs[i];
+
+      // It has already been used
+      if (gif && Store.history.indexOf(gif.id) > -1 && tries < 10) {
+        gif = null;
+        tries++;
+      }
+    } while(!gif && tries < 10);
 
     return gif;
   },
