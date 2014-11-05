@@ -1,0 +1,13 @@
+/**
+  Used before a theme is loaded
+*/
+
+body {
+  text-align: center;
+}
+
+.main .arrow,
+.settings,
+.history {
+  display: none;
+}

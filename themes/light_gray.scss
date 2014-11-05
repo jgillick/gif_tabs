@@ -104,53 +104,67 @@ nav div:hover {
   padding: 15px 0;
   background: #D9DCE8;
   border-top: 1px solid #B6B1B1;
-}
-.history.empty {
-  display: none;
-}
-.history h1 {
-  width: 700px;
-  margin: 0 auto;
-}
-.history ul {
-  min-height: 150px;
-  width: 700px;
-  margin: 15px auto 0;
-  list-style-type: none;
-}
-.history ul li {
-  display: inline-block;
-  padding: 0;
-  margin: 5px;
-  vertical-align: middle;
-  text-align: center;
-  width: 120px;
-  overflow: hidden;
-  border: 1px solid #999;
-  box-shadow: 4px 6px 10px 0px rgba(90, 90, 90, .5);
-  box-sizing: content-box;
-}
-.history ul li img {
-  height: 120px;
-  text-align: center;
-  vertical-align: middle;
-  cursor: pointer;
-  border: none;
-  transition: opacity .2s;
-  background: rgba(100, 100, 100, .6);
-}
-.history ul li img.loading {
-  opacity: 0;
-}
-.history ul li img.loaded {
-  opacity: .4;
-}
-.history ul li:hover img {
-  opacity: 1;
-}
-.history ul li.selected img,
-.history ul li:hover.selected img {
-  opacity: 1;
+
+  .list-wrapper {
+    margin: 0 auto;
+    width: 700px;
+    overflow: auto;
+  }
+
+  &.empty {
+    display: none;
+  }
+  h1 {
+    width: 700px;
+    margin: 0 auto;
+  }
+  ul {
+    min-height: 150px;
+    width: 700px;
+    margin: 15px auto 0;
+    list-style-type: none;
+
+    li {
+      display: inline-block;
+      padding: 0;
+      margin: 5px;
+      vertical-align: middle;
+      text-align: center;
+      width: 120px;
+      overflow: hidden;
+      border: 1px solid #999;
+      box-shadow: 4px 6px 10px 0px rgba(90, 90, 90, .5);
+      box-sizing: content-box;
+    }
+    li img {
+      height: 120px;
+      text-align: center;
+      vertical-align: middle;
+      cursor: pointer;
+      border: none;
+      transition: opacity .2s;
+      background: rgba(100, 100, 100, .6);
+    }
+    li img.loading {
+      opacity: 0;
+    }
+    li img.loaded {
+      opacity: .4;
+    }
+    li:hover img {
+      opacity: 1;
+    }
+    li.selected img,
+    li:hover.selected img {
+      opacity: 1;
+    }
+  }
+
+  @for $i from 0 through 20 {
+    &.history-#{$i} .list-wrapper ul {
+      width: #{$i * 132}px;
+    }
+  }
 }
 
 
