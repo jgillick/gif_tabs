@@ -1,3 +1,7 @@
+Sass.options({
+  style: Sass.style.compact,
+  comments: Sass.comments.default
+});
 
 /**
   Manage compiling and caching SASS files
@@ -28,7 +32,11 @@ window.SassController  = {
 
     // Compile and output
     css = Sass.compile(src);
-    style.textContent = css;
+    if (typeof css == 'string') {
+      style.textContent = css;
+    } else {
+      throw 'line'+ css.line +', '+ css.message;
+    }
   },
 
   /**
@@ -37,22 +45,31 @@ window.SassController  = {
     @param {String} path The path to the scss file to import
     @param {String} to   (optional) The ID of a style block to put the compiled SCSS
                          (will replace whatever is already there)
-    @returns Promise
   */
   importFile: function(path, to) {
-    var dfd = new jQuery.Deferred();
+    // var dfd = new jQuery.Deferred();
+    // $.get(path)
+    //   .then((function(src){
+    //     if (path[0] == '/') {
+    //       path = path.substr(1);
+    //     }
+    //     Sass.writeFile(path, src);
+    //     this.import("@import '"+ path +"';", to || path.toLowerCase());
+    //     dfd.resolve();
+    //   }).bind(this))
+    //   .fail(function(xhr){
+    //     console.error('Failed to load'+ path, xhr);
+    //     dfd.reject(xhr);
+    //   });
+    // return dfd.promise();
 
-    $.get(path)
-      .then((function(src){
-        this['import'](src, to || path.toLowerCase());
-        dfd.resolve();
-      }).bind(this))
-      .fail(function(xhr){
-        console.error('Failed to load'+ path, xhr);
-        dfd.reject(xhr);
-      });
+    // Relative paths only
+    if (path[0] == '/') {
+      path = path.substr(1);
+    }
 
-    return dfd.promise();
+    Sass.writeFile(path, Sass.readFile(path) || Module.read(path));
+    this.import("@import '"+ path +"';", to || path.toLowerCase());
   },
 
   /**
