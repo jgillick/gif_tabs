@@ -7,6 +7,7 @@ var UI_NEXT = 1,
   Setup and manage the UI of the page
 */
 (function() {
+  var historyIndex = -1;
 
   window.UI = {
     currentGif: null,
@@ -38,6 +39,7 @@ var UI_NEXT = 1,
         if (cachedId && (selected = Gifs.forID(cachedId)) ) {
           this.showGif(selected);
           this.buildHistory();
+          historyIndex = Store.history.indexOf(cachedId);
           Gifs.loadNewGifs();
         }
 
@@ -86,6 +88,7 @@ var UI_NEXT = 1,
     showRandomGif: function() {
       var gif = Gifs.random();
       if (gif) {
+        historyIndex = 0;
         Store.addToHistory(gif);
         this.showGif(gif);
         Store.randomChooseCount++;
@@ -256,11 +259,42 @@ var UI_NEXT = 1,
 
         container.toggleClass('empty', i == 0);
         container.addClass('history-'+ i);
+
+        container.removeClass (function (index, css) {
+          return (css.match (/(^|\s)selected-\d+/g) || []).join(' ');
+        });
         container.addClass('selected-'+ selected);
 
         this.setWindowSizing();
 
       }).bind(this));
+    },
+
+    /**
+      Change the history element we're viewing, either next or previous
+
+      @param {int} dir The direction to me (1 = next, -1 = previous)
+    */
+    historyIncrement: function(dir) {
+
+      // Set index
+      historyIndex += dir;
+      if (this.currentGif && Store.history[historyIndex] == this.currentGif.id) {
+        historyIndex += dir;
+      }
+      if (historyIndex < -1) {
+        historyIndex = -1;
+      }
+
+      // Show history gif
+      if (Store.history[historyIndex]) {
+        this.showGif(Gifs.forID(Store.history[historyIndex]));
+      }
+      // Out of range, show random
+      else {
+        this.showRandomGif();
+      }
+      this.buildHistory();
     },
 
     /**
