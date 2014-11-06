@@ -69,7 +69,7 @@ window.Gifs = {
     if (forceUpdate !== true
         && gifLen > 0
         && Store.randomChooseCount < (gifLen / 4)
-        && now - Store.lastFeedUpdate < (60 * 60 * 12 * 1000)) {
+        && now - Store.lastFeedUpdate < (60 * 60 * 6 * 1000)) {
       dfd.resolve();
       return dfd.promise();
     }
