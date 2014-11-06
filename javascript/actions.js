@@ -6,7 +6,7 @@
   Add to favorites
 */
 $('.main .make-favorite').click(function(evt){
-  addToFavorites();
+  Store.addToFavorites(UI.currentGif);
 });
 
 /**
@@ -18,7 +18,6 @@ $('section.history').click(function(evt){
 
   if (target.is('img')) {
     id = target.attr('id');
-    // historyIndex = parseInt(target.attr('data-index'));
     UI.showGif(Gifs.forID(id));
     UI.buildHistory();
   }
@@ -97,8 +96,6 @@ $('.settings input[type=checkbox]').change(function(){
       if (Store.settings[UI.currentGif.feed] === false) {
         UI.showRandomGif();
       }
-
-      UI.buildHistory();
     });
   }
 
