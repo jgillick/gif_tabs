@@ -107,53 +107,76 @@ nav div:hover {
   padding: 15px 0;
   background: #ECDCE8;
   border-top: 1px solid #C28DB1;
-}
-.history.empty {
-  display: none;
-}
-.history h1 {
-  width: 700px;
-  margin: 0 auto;
-}
-.history ul {
-  width: 700px;
-  margin: 15px auto 0;
-  list-style-type: none;
-}
-.history ul li {
-  display: inline-block;
-  padding: 0;
-  margin: 5px;
-  vertical-align: middle;
-  text-align: center;
-  width: 120px;
-  overflow: hidden;
-  border: 1px solid #999;
-  box-shadow: 4px 6px 10px 0px rgba(90, 90, 90, .5);
-  box-sizing: content-box;
-  transition: transform .08s;
-}
-.history ul li img {
-  height: 120px;
-  text-align: center;
-  vertical-align: middle;
-  cursor: pointer;
-  border: none;
-  background: rgba(100, 100, 100, .6);
-  transition: opacity .1s;
-}
-.history ul li img.loading {
-  opacity: 0;
-}
-.history ul li img.loaded {
-  opacity: 1;
-}
-.history ul li:hover {
-  transform:  translateY(-10px);
-}
-.history ul li.selected,
-.history ul li:hover.selected {
-  transform:  translateY(-12px);
+
+  .list-wrapper {
+    margin: 0 auto;
+    width: 700px;
+    overflow: hidden;
+  }
+
+  &.empty {
+    display: none;
+  }
+  h1 {
+    width: 700px;
+    margin: 0 auto;
+  }
+  ul {
+    width: 700px;
+    margin: 15px auto 0;
+    list-style-type: none;
+    transition: transform .5s;
+
+    li {
+      display: inline-block;
+      padding: 0;
+      margin: 5px;
+      vertical-align: middle;
+      text-align: center;
+      width: 120px;
+      overflow: hidden;
+      border: 1px solid #999;
+      box-shadow: 4px 6px 10px 0px rgba(90, 90, 90, .5);
+      box-sizing: content-box;
+      transition: transform .08s;
+    }
+    li img {
+      height: 120px;
+      text-align: center;
+      vertical-align: middle;
+      cursor: pointer;
+      border: none;
+      background: rgba(100, 100, 100, .6);
+      transition: opacity .1s;
+    }
+    li img.loading {
+      opacity: 0;
+    }
+    li img.loaded {
+      opacity: 1;
+    }
+    li:hover {
+      transform:  translateY(-10px);
+    }
+    li.selected,
+    li:hover.selected {
+      transform:  translateY(-12px);
+    }
+  }
+
+  // History width for number of items
+  @for $i from 0 through 20 {
+    &.history-#{$i} .list-wrapper ul {
+      width: #{$i * 132}px;
+    }
+  }
+
+  // Move list to selection
+  @for $i from 3 through 20 {
+    &.selected-#{$i} .list-wrapper ul {
+      transform: translateX(calc(-#{$i * 135.6}px + 265px));
+    }
+  }
 }
 
 
