@@ -7,8 +7,6 @@ var UI_NEXT = 1,
   Setup and manage the UI of the page
 */
 (function() {
-  var historyStart = 0,
-      historyIndex = -1;
 
   window.UI = {
     currentGif: null,
@@ -18,6 +16,8 @@ var UI_NEXT = 1,
       Run the page program
     */
     init: function() {
+
+      SassController.importAll();
 
       // Load from storage, then build page
       Store.load(null, 'init').then((function(){
@@ -38,13 +38,6 @@ var UI_NEXT = 1,
         if (cachedId && (selected = Gifs.forID(cachedId)) ) {
           this.showGif(selected);
           this.buildHistory();
-
-          // Find in history
-          historyIndex = Store.history.indexOf(cachedId);
-          if (historyIndex > -1) {
-            historyStart = (historyIndex > 1) ? historyIndex - 2 : 0;
-          }
-
           Gifs.loadNewGifs();
         }
 
@@ -77,14 +70,14 @@ var UI_NEXT = 1,
       @param {String} name The file name to the stylesheet file for the theme
     */
     setTheme: function(name) {
-      var stylesheet = $('#theme-stylesheet'),
-          chooser = $('#theme-select');
+      var chooser = $('#theme-select');
 
-      stylesheet.attr('href', '/themes/'+ name +'.css');
+      //stylesheet.attr('href', '/themes/'+ name +'.css');
       chooser.val(name);
+      SassController.importFile('./themes/'+ name +'.scss', 'theme-css');
 
       Store.settings.theme = name;
-      Store.save('theme');
+      Store.save('settings');
     },
 
     /**
@@ -93,8 +86,7 @@ var UI_NEXT = 1,
     showRandomGif: function() {
       var gif = Gifs.random();
       if (gif) {
-        historyIndex = 0;
-        Store.addToHistory(gif).then(this.buildHistory.bind(this));
+        Store.addToHistory(gif);
         this.showGif(gif);
         Store.randomChooseCount++;
       }
@@ -139,7 +131,7 @@ var UI_NEXT = 1,
         gif.sources.forEach(function(source) {
           var urlParts = source.match(/https?:\/\/(.*?)([\/|\?].*)?$/),
               link = $("<a>"),
-              siteName;
+              siteName, isFav;
 
           // grab the second to last domain part
           // i.e. www.reddit.com -> reddit
@@ -157,6 +149,10 @@ var UI_NEXT = 1,
         container.find('cite').removeClass('has-source');
       }
 
+      // Is it a favorite
+      isFav = !!_.findWhere(Store.favorites, {id: gif.id});
+      container.toggleClass('favorite', isFav);
+
       // Finish up
       container.removeClass('loading');
       $("#gifid").val(gif.id);
@@ -173,7 +169,7 @@ var UI_NEXT = 1,
       @param {HTMLNode} to The UL to build the list to
       @param {Array} from The array of images or image IDs to build from
       @param {int} start The index of the array to start at
-      @param {int} limit The maximum number of images to build to this list
+      @param {int} limit (optional) The maximum number of images to build to this list
     */
     buildList: function(to, from, start, limit) {
 
@@ -186,35 +182,18 @@ var UI_NEXT = 1,
       var container = $('section.history'),
           list = container.find('ul'),
           elements = list.find('li'),
-          i = 0;
+          i = 0, selected = 0;
 
       Store.load('history').then((function(){
 
-        // Adjust the history range
-        if (historyIndex > historyStart + 4) {
-          historyStart++;
-        }
-        else if (historyIndex < historyStart && historyIndex > 0) {
-          historyStart--;
-        }
-
-        // Keep historyStart within bounds
-        if (historyStart < 0) {
-          historyStart = 0;
-        } else if (historyStart >= Store.history.length - 5) {
-          historyStart = history.length - 5;
-        }
-
         // Build list
-        Store.history.slice(historyStart, historyStart + 10).every((function(id, index){
+        Store.history.every((function(id, index){
           var gif = Gifs.forID(id),
               item, img,
               preload = new Image();
 
           if (!gif) {
             return true;
-          } else if (i >= 5) {
-            return false;
           }
 
           // Reuse list item
@@ -257,7 +236,7 @@ var UI_NEXT = 1,
             img.attr('id', gif.id);
             img.attr('alt', gif.title);
             img.attr('title', gif.title);
-            img.attr('data-index', historyStart + index);
+            img.attr('data-index', i);
 
             // Preload full image version
             preload.src = gif.url;
@@ -265,6 +244,7 @@ var UI_NEXT = 1,
 
           // Is it the current gif being display
           if (this.currentGif && id == this.currentGif.id) {
+            selected = i;
             item.addClass('selected');
           } else {
             item.removeClass('selected');
@@ -274,42 +254,13 @@ var UI_NEXT = 1,
           return true;
         }).bind(this));
 
-        if (i > 0) {
-          container.removeClass('empty');
-        } else {
-          container.addClass('empty');
-        }
+        container.toggleClass('empty', i == 0);
+        container.addClass('history-'+ i);
+        container.addClass('selected-'+ selected);
 
         this.setWindowSizing();
 
       }).bind(this));
-    },
-
-    /**
-      Change the history element we're viewing, either next or previous
-
-      @param {int} dir The direction to me (1 = next, -1 = previous)
-    */
-    historyIncrement: function(dir) {
-
-      // Set index
-      historyIndex += dir;
-      if (this.currentGif && Store.history[historyIndex] == this.currentGif.id) {
-        historyIndex += dir;
-      }
-      if (historyIndex < -1) {
-        historyIndex = -1;
-      }
-
-      // Show history gif
-      if (Store.history[historyIndex]) {
-        this.showGif(Gifs.forID(Store.history[historyIndex]));
-      }
-      // Out of range, show random
-      else {
-        this.showRandomGif();
-      }
-      this.buildHistory();
     },
 
     /**
@@ -329,6 +280,11 @@ var UI_NEXT = 1,
     }
 
   }
+
+  // UI Listeners
+  Messenger.addListener('history-updated', function(){
+    UI.buildHistory();
+  });
 })();
 
 UI.init();
