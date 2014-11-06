@@ -68,8 +68,12 @@ window.SassController  = {
       path = path.substr(1);
     }
 
-    Sass.writeFile(path, Sass.readFile(path) || Module.read(path));
-    this.import("@import '"+ path +"';", to || path.toLowerCase());
+    try {
+      Sass.writeFile(path, Sass.readFile(path) || Module.read(path));
+      this.import("@import '"+ path +"';", to || path.toLowerCase());
+    } catch(e) {
+      console.error(e.message);
+    }
   },
 
   /**
