@@ -71,7 +71,6 @@ body {
   min-height: 22px;
   width: 22px;
   background: url(/images/favorite-star-gray.png) no-repeat center center;
-  background-size: 20px 20px;
   background-size: contain;
   text-indent: -1234em;
   opacity: .2;
@@ -88,14 +87,22 @@ body {
   top: 0; bottom: 0;
   left: 0; right: 0;
   background: url(/images/favorite-star.png) no-repeat center center;
-  background-size: 20px 20px;
   background-size: contain;
   opacity: 0;
   transition: opacity .3s;
 }
-.main figcaption em:hover:before,
-.main.favorite figcaption em:before {
+.main figcaption em:hover:before {
   opacity: 1;
+}
+.main.favorite figcaption em  {
+  background-image: url(/images/favorite-star.png);
+}
+.main.favorite figcaption em:before {
+  background-image: url(/images/favorite-star-trash.png);
+}
+.main figcaption em.clicked:before,
+.main.favorite figcaption em.clicked:before {
+  display: none;
 }
 
 /*

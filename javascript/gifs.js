@@ -15,10 +15,14 @@ window.Gifs = {
     Return a gif from the gifs pool by ID or undefined if not found
   */
   forID: function(id) {
-    if (Store.gifs.length == 0) {
-      return undefined;
+    var gif = _.findWhere(Store.gifs, {id: id});
+
+    // Look in favorites
+    if (!gif) {
+      gif = _.findWhere(Store.favorites, {id: id});
     }
-    return _.findWhere(Store.gifs, {id: id});
+
+    return gif;
   },
 
   /**
@@ -47,9 +51,19 @@ window.Gifs = {
         gif = null;
         tries++;
       }
-    } while(!gif && tries < 10);
+    } while(!gif && tries < 20);
 
     return gif;
+  },
+
+  /**
+    Returns if a gif ID is marked as a favorite
+
+    @param {String} id The ID to the gif
+    @return True if this gif is a favorite
+  */
+  isFavorite: function(id) {
+    return !!_.findWhere(Store.favorites, {id: id});
   },
 
   /**
@@ -68,14 +82,12 @@ window.Gifs = {
     // or we've gone through at least 1/4 of the existing pool
     if (forceUpdate !== true
         && gifLen > 0
-        && Store.randomChooseCount < (gifLen / 4)
         && now - Store.lastFeedUpdate < (60 * 60 * 6 * 1000)) {
       dfd.resolve();
       return dfd.promise();
     }
 
     lastFeedUpdate = now;
-    randomChooseCount = 0;
 
     // Clear all gifs, except what is in history
     Store.gifs = Store.gifs.filter(function(gif) {

@@ -21,7 +21,7 @@ var UI_NEXT = 1,
       SassController.importAll();
 
       // Load from storage, then build page
-      Store.load(null, 'init').then((function(){
+      Store.load(null).then((function(){
         var cachedId, selected;
 
         this.updateSettings();
@@ -29,7 +29,7 @@ var UI_NEXT = 1,
 
         // Attempt to find a cached ID
         if (document.location.hash.length > 1) {
-          cachedId = document.location.hash.substr(1);
+          cachedId = document.location.hash.substr(5); // #gif=123
         }
         else if ($("#gifid").val() != '') {
           cachedId = $("#gifid").val();
@@ -54,6 +54,8 @@ var UI_NEXT = 1,
             Gifs.loadNewGifs().then(this.showRandomGif.bind(this));
           }
         }
+
+        this.buildFavorites();
       }).bind(this));
     },
 
@@ -104,6 +106,10 @@ var UI_NEXT = 1,
       var container = $('section.main'),
           aEl = container.find('a.image'),
           imgEl = container.find('a.image img');
+
+      if (!gif) {
+        return;
+      }
 
       this.currentGif = gif;
 
@@ -160,7 +166,7 @@ var UI_NEXT = 1,
       container.removeClass('loading');
       $("#gifid").val(gif.id);
       if (!this.unloading) {
-        document.location.replace("#"+ gif.id);
+        document.location.replace("#gif="+ gif.id);
       }
 
       setTimeout(this.setWindowSizing, 50);
@@ -169,104 +175,137 @@ var UI_NEXT = 1,
     /**
       Build a list of gifs
 
-      @param {HTMLNode} to The UL to build the list to
-      @param {Array} from The array of images or image IDs to build from
-      @param {int} start The index of the array to start at
-      @param {int} limit (optional) The maximum number of images to build to this list
+      @param {Array} gifs The array of images or image IDs to build from
+      @param {HTMLNode} section The HTML section that has the list
     */
-    buildList: function(to, from, start, limit) {
+    buildList: function(gifs, section) {
+      var container = section,
+          list = container.find('ul'),
+          elements = list.find('li'),
+          i = 0, selected = 0;
 
+      // Remove extra items
+      if (gifs.length < elements.length) {
+        elements.slice(gifs.length).remove();
+      }
+
+      // Build list
+      gifs.every((function(gif, index){
+        var item, img,
+            preload = new Image();
+
+        // Gif ID
+        if (typeof gif == 'string') {
+          gif = Gifs.forID(gif);
+        }
+
+        if (!gif) {
+          return true;
+        }
+
+        // Reuse list item
+        if (item = elements.get(i)) {
+          item = $(item);
+          img = item.find('img');
+
+        } else {
+          item = $('<li>');
+          img  = $('<img>');
+          item.append(img);
+          list.append(item);
+        }
+
+        // New image
+        if (img.attr('id') != gif.id) {
+
+          img.removeClass('loaded');
+          img.addClass('loading');
+
+          // Set loaded class when image loads
+          img.get(0).onload = function(){
+            img.removeClass('loading');
+            img.addClass('loaded');
+          };
+
+          // Set the SRC after a slight delay
+          // (in case CSS is fading the old image out)
+          setTimeout(function(){
+            img.attr('src', gif.thumb);
+
+            // Call onload if image is cached
+            if (img.get(0).complete) {
+              img.get(0).onload.call(img.get(0));
+            }
+          }, 100);
+
+
+          // Other attributes
+          img.attr('id', gif.id);
+          img.attr('alt', gif.title);
+          img.attr('title', gif.title);
+          img.attr('data-index', i);
+
+          // Preload full image version
+          preload.src = gif.url;
+        }
+
+        // Is it the current gif being display
+        if (this.currentGif && gif.id == this.currentGif.id) {
+          selected = i;
+          item.addClass('selected');
+        } else {
+          item.removeClass('selected');
+        }
+
+        i++;
+        return true;
+      }).bind(this));
+
+      container.toggleClass('empty', i == 0);
+
+      // Add number class
+      container.removeClass (function (index, css) {
+        return (css.match (/(^|\s)num-\d+/g) || []).join(' ');
+      });
+      container.addClass('num-'+ i);
+
+      // Add selected class
+      container.removeClass (function (index, css) {
+        return (css.match (/(^|\s)selected-\d+/g) || []).join(' ');
+      });
+      container.addClass('selected-'+ selected);
+
+      this.setWindowSizing();
+    },
+
+    /**
+      Checks if the current gif is marked as a favorite,
+      then updates the UI to reflect this and returns true/false,
+      depending on the favorite status
+
+      @return True if the gif is marked as favorite
+    */
+    isFavorite: function(){
+      isFav = Gifs.isFavorite(this.currentGif.id)
+      $('section.main').toggleClass('favorite', isFav);
+      return isFav;
+    },
+
+    /**
+      Build favorites list
+    */
+    buildFavorites: function(){
+      Store.load('favorites').then((function(){
+        this.buildList(Store.favorites, $('section.favorites'));
+      }).bind(this));
     },
 
     /**
       Build the history list
     */
     buildHistory: function() {
-      var container = $('section.history'),
-          list = container.find('ul'),
-          elements = list.find('li'),
-          i = 0, selected = 0;
-
       Store.load('history').then((function(){
-
-        // Build list
-        Store.history.every((function(id, index){
-          var gif = Gifs.forID(id),
-              item, img,
-              preload = new Image();
-
-          if (!gif) {
-            return true;
-          }
-
-          // Reuse list item
-          if (item = elements.get(i)) {
-            item = $(item);
-            img = item.find('img');
-
-          } else {
-            item = $('<li>');
-            img  = $('<img>');
-            item.append(img);
-            list.append(item);
-          }
-
-          // New image
-          if (img.attr('id') != gif.id) {
-
-            img.removeClass('loaded');
-            img.addClass('loading');
-
-            // Set loaded class when image loads
-            img.get(0).onload = function(){
-              img.removeClass('loading');
-              img.addClass('loaded');
-            };
-
-            // Set the SRC after a slight delay
-            // (in case CSS is fading the old image out)
-            setTimeout(function(){
-              img.attr('src', gif.thumb);
-
-              // Call onload if image is cached
-              if (img.get(0).complete) {
-                img.get(0).onload.call(img.get(0));
-              }
-            }, 100);
-
-
-            // Other attributes
-            img.attr('id', gif.id);
-            img.attr('alt', gif.title);
-            img.attr('title', gif.title);
-            img.attr('data-index', i);
-
-            // Preload full image version
-            preload.src = gif.url;
-          }
-
-          // Is it the current gif being display
-          if (this.currentGif && id == this.currentGif.id) {
-            selected = i;
-            item.addClass('selected');
-          } else {
-            item.removeClass('selected');
-          }
-
-          i++;
-          return true;
-        }).bind(this));
-
-        container.toggleClass('empty', i == 0);
-        container.addClass('history-'+ i);
-
-        container.removeClass (function (index, css) {
-          return (css.match (/(^|\s)selected-\d+/g) || []).join(' ');
-        });
-        container.addClass('selected-'+ selected);
-
-        this.setWindowSizing();
-
+        this.buildList(Store.history, $('section.history'));
       }).bind(this));
     },
 
@@ -315,9 +354,13 @@ var UI_NEXT = 1,
 
   }
 
-  // UI Listeners
+  // State Listeners
   Messenger.addListener('history-updated', function(){
     UI.buildHistory();
+  });
+  Messenger.addListener('favorites-updated', function(){
+    UI.isFavorite();
+    UI.buildFavorites();
   });
 })();
 

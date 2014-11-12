@@ -3,23 +3,45 @@
   var errorCount = 0;
 
 /**
-  Add to favorites
+  Toggle favorites
 */
 $('.main .make-favorite').click(function(evt){
-  Store.addToFavorites(UI.currentGif);
+  $(this).addClass('clicked');
+
+  if (UI.isFavorite()) {
+    Store.removeFromFavorites(UI.currentGif.id);
+  }
+  else {
+    Store.addToFavorites(UI.currentGif);
+  }
+});
+$('.main .make-favorite').mouseover(function(){
+
+  // Already processed
+  if ($(this).is('.clicked')) {
+    return false;
+  }
+
+  if (UI.isFavorite()) {
+    this.title = "Remove from favorites";
+  } else {
+    this.title = "Add to favorites";
+  }
+});
+$('.main .make-favorite').mouseout(function(){
+  $(this).removeClass('clicked');
 });
 
 /**
- Clicking history loads image
+ Clicking image in list loads the image
 */
-$('section.history').click(function(evt){
+$('section.history, section.favorites').click(function(evt){
   var target = $(evt.target),
       id;
 
   if (target.is('img')) {
     id = target.attr('id');
     UI.showGif(Gifs.forID(id));
-    UI.buildHistory();
   }
 });
 
@@ -53,7 +75,7 @@ $('.main img').error(function(){
 /**
   Loaded successfully
 */
-$('.main img').load(function(){
+$('a.image img').load(function(){
   errorCount = 0;
   setTimeout(UI.setWindowSizing, 50);
 });
