@@ -38,7 +38,7 @@
           msg = {'name': name, 'data': data};
       port.postMessage(msg);
       radio(name).broadcast(data);
-      console.log('Broadcast', msg);
+      // console.log('Broadcast', msg);
     }
   }
 
