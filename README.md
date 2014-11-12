@@ -9,6 +9,7 @@ A chrome extension that shows you a new animated gif for every new tab.
  * Gifs randomly chosen from [giphy](http://giphy.com/) and [reddit](reddit.com/r/gifs/)
  * Maintains the latest gif when using the browser back button or refresh.
  * Shows a list of recent gifs.
+ * Add gifs to favorites
  * Several themes to choose from.
 
 ## Themes and Settings
