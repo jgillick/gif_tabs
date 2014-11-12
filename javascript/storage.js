@@ -9,6 +9,7 @@
     gifs: [],
     history: [],
     favorites: [],
+    scss: {},
     settings: {},
     lastFeedUpdate: 0,
     randomChooseCount: 0,
@@ -27,6 +28,7 @@
         this.gifs              = items.gifs || this.gifs;
         this.history           = items.history || this.history;
         this.favorites         = items.favorites || this.favorites;
+        this.scss              = items.scss || this.scss;
         this.settings          = items.settings || this.settings;
         this.lastFeedUpdate    = items.lastFeedUpdate || this.lastFeedUpdate;
         this.randomChooseCount = items.randomChooseCount || this.randomChooseCount;
@@ -69,6 +71,7 @@
         gifs:              this.gifs,
         history:           this.history,
         favorites:         this.favorites,
+        scss:              this.scss,
         settings:          this.settings,
         lastFeedUpdate:    this.lastFeedUpdate,
         randomChooseCount: this.randomChooseCount
@@ -110,9 +113,9 @@
       Add the a gif to the favorites list
 
       @param {Object} gif The gif to add
-      return Promise
     */
     addToFavorites: function(gif) {
+      var dfd = new jQuery.Deferred();
 
       // Update latest favorites
       this.load('favorites').then((function(){
@@ -123,8 +126,36 @@
         this.favorites = this.favorites.filter(function(f){ return f && f.id != fav.id; });
         this.favorites.unshift(fav);
 
-        return this.save('favorites');
+        this.save('favorites').then(dfd.resolve).fail(dfd.reject);
       }).bind(this));
+
+      return dfd.promise();
+    },
+
+    /**
+      Remove a favorite by ID
+
+      @param {String} id The gif ID to remove from favorites
+    */
+    removeFromFavorites: function(id){
+      var dfd = new jQuery.Deferred();
+
+      this.load('favorites').then((function(){
+
+        // Find in favorites array and remove
+        this.favorites.every((function(fav, i) {
+          if (fav.id == id) {
+            delete this.favorites[i];
+            this.favorites = _.compact(this.favorites);
+            return false; // stop iterating
+          }
+          return true;
+        }).bind(this));
+
+        this.save('favorites').then(dfd.resolve).fail(dfd.reject);
+      }).bind(this));
+
+      return dfd.promise();
     },
 
     /**
