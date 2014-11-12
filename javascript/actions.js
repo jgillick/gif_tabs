@@ -12,7 +12,7 @@ $('.main .make-favorite').click(function(evt){
     Store.removeFromFavorites(UI.currentGif.id);
   }
   else {
-    Store.addToFavorites(UI.currentGif);
+    Store2.addToFavorites(UI.currentGif);
   }
 });
 $('.main .make-favorite').mouseover(function(){
@@ -37,11 +37,14 @@ $('.main .make-favorite').mouseout(function(){
 */
 $('section.history, section.favorites').click(function(evt){
   var target = $(evt.target),
+      store = ($(this).is('.history')) ? 'history' : 'favorites',
       id;
 
   if (target.is('img')) {
     id = target.attr('id');
-    UI.showGif(Gifs.forID(id));
+    Store2.getByID(store, id).then(function(gif){
+      UI.showGif(gif);
+    });
   }
 });
 
@@ -111,14 +114,16 @@ $('.settings input[type=checkbox]').change(function(){
   }
 
   // Update feed
-  if (checkbox.is('input[name=image-feed]') && !checkbox.checked) {
-    Store.pruneImageList().then(function(){
+  if (checkbox.is('input[name=image-feed]') && !checkbox.is(':checked')) {
+    Store2.deleteGifsBy('feed', checkbox.val()).then(function(){
 
       // Update current gif
       if (Store.settings[UI.currentGif.feed] === false) {
         UI.showRandomGif();
       }
     });
+  } else {
+    Gifs.loadNewGifs(true);
   }
 
   return true;

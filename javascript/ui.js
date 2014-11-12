@@ -21,41 +21,51 @@ var UI_NEXT = 1,
       SassController.importAll();
 
       // Load from storage, then build page
-      Store.load(null).then((function(){
-        var cachedId, selected;
+      Store2.init().then((function(){
+        Store2.getGifs().then((function(){
+          Store.load(null).then((function(){
+            var cachedId;
 
-        this.updateSettings();
-        this.setTheme(Store.settings.theme);
+            this.updateSettings();
+            this.setTheme(Store.settings.theme);
 
-        // Attempt to find a cached ID
-        if (document.location.hash.length > 1) {
-          cachedId = document.location.hash.substr(5); // #gif=123
-        }
-        else if ($("#gifid").val() != '') {
-          cachedId = $("#gifid").val();
-        }
+            // Attempt to find a cached ID
+            if (document.location.hash.length > 1) {
+              cachedId = document.location.hash.substr(5); // #gif=123
+            }
+            else if ($("#gifid").val() != '') {
+              cachedId = $("#gifid").val();
+            }
 
-        // Attempt to load existing gif (from location hash)
-        if (cachedId && (selected = Gifs.forID(cachedId)) ) {
-          this.showGif(selected);
-          this.buildHistory();
-          historyIndex = Store.history.indexOf(cachedId);
-          Gifs.loadNewGifs();
-        }
+            // No gifs
+            if (Store2.gifIds.length == 0) {
+              Gifs.loadNewGifs().then(this.showRandomGif.bind(this));
+            }
 
-        // Show random gif
-        else {
-          if (Store.gifs.length > 0) {
-            this.showRandomGif();
+            // Attempt to load existing gif (from location hash)
+            if (cachedId) {
+              Store2.getByID('history', cachedId)
+              .then((function(gif){
+                this.showGif(gif);
+                this.buildHistory();
+                historyIndex = Store2.historyIds.indexOf(cachedId);
+                Gifs.loadNewGifs();
+              }).bind(this))
+              .fail((function(){
+                this.showRandomGif();
+              }).bind(this));
+            }
+
+            // Show random gif
+            else {
+              this.showRandomGif();
+              Gifs.loadNewGifs();
+            }
+
             Gifs.loadNewGifs();
-          }
-          // No gifs, load and show
-          else {
-            Gifs.loadNewGifs().then(this.showRandomGif.bind(this));
-          }
-        }
-
-        this.buildFavorites();
+            this.buildFavorites();
+          }).bind(this));
+        }).bind(this));
       }).bind(this));
     },
 
@@ -91,7 +101,7 @@ var UI_NEXT = 1,
       var gif = Gifs.random();
       if (gif) {
         historyIndex = 0;
-        Store.addToHistory(gif);
+        Store2.addToHistory(gif);
         this.showGif(gif);
         Store.randomChooseCount++;
       }
@@ -194,11 +204,6 @@ var UI_NEXT = 1,
         var item, img,
             preload = new Image();
 
-        // Gif ID
-        if (typeof gif == 'string') {
-          gif = Gifs.forID(gif);
-        }
-
         if (!gif) {
           return true;
         }
@@ -295,8 +300,8 @@ var UI_NEXT = 1,
       Build favorites list
     */
     buildFavorites: function(){
-      Store.load('favorites').then((function(){
-        this.buildList(Store.favorites, $('section.favorites'));
+      Store2.getFavorites().then((function(favorites){
+        this.buildList(favorites, $('section.favorites'));
       }).bind(this));
     },
 
@@ -304,8 +309,8 @@ var UI_NEXT = 1,
       Build the history list
     */
     buildHistory: function() {
-      Store.load('history').then((function(){
-        this.buildList(Store.history, $('section.history'));
+      Store2.getHistory().then((function(history){
+        this.buildList(history, $('section.history'));
       }).bind(this));
     },
 
