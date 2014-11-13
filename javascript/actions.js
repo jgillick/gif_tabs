@@ -8,12 +8,13 @@
 $('.main .make-favorite').click(function(evt){
   $(this).addClass('clicked');
 
-  if (UI.isFavorite()) {
-    Store.removeFromFavorites(UI.currentGif.id);
-  }
-  else {
-    Store2.addToFavorites(UI.currentGif);
-  }
+  Gifs.isFavorite(UI.currentGif.id).then(function(isFav){
+    if (isFav) {
+      Store2.removeFavorite(UI.currentGif);
+    } else {
+      Store2.addToFavorites(UI.currentGif);
+    }
+  });
 });
 $('.main .make-favorite').mouseover(function(){
 
@@ -41,9 +42,10 @@ $('section.history, section.favorites').click(function(evt){
       id;
 
   if (target.is('img')) {
-    id = target.attr('id');
-    Store2.getByID(store, id).then(function(gif){
+    id = target.attr('data-id');
+    Store2.getByID(id).then(function(gif){
       UI.showGif(gif);
+      UI.updateHistorySelection();
     });
   }
 });
@@ -57,9 +59,9 @@ $('nav .arrow').click(function(evt){
 
   // Move up/down history index
   if (target.is('.arrow.left')) {
-    UI.historyIncrement(UI_NEXT);
-  } else if (target.is('.arrow.right')) {
     UI.historyIncrement(UI_PREV);
+  } else if (target.is('.arrow.right')) {
+    UI.historyIncrement(UI_NEXT);
   }
 
   return false;

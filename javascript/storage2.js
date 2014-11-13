@@ -17,12 +17,16 @@
 
     if (newVersion == 1) {
 
-      // Create image stores
-      ['gifs', 'history', 'favorites'].forEach(function(name){
-        var store = db.createObjectStore(name, {keyPath: "id"});
-        store.createIndex("feed", "feed", { unique: false });
-        store.createIndex("timestamp", "timestamp", { unique: false });
-      });
+      // Create gifs stores
+      var store = db.createObjectStore('gifs', {keyPath: "id"});
+      store.createIndex('feed',      'feed',      {unique: false});
+      store.createIndex('favorited', 'favorited', {unique: false});
+      store.createIndex('history',   'history',   {unique: false});
+      store.createIndex('addedOn',   'addedOn',   {unique: false});
+      store.createIndex('id, history',             ['id', 'history'], {unique: false});
+      store.createIndex('id, favorites',          ['id', 'favorited'], {unique: false});
+      store.createIndex('favorite, history',       ['favorited', 'history'], {unique: false});
+      store.createIndex('feed, favorite, history', ['feed', 'favorited', 'history'], {unique: false});
 
       // Settings & config store
       db.createObjectStore('config', {keyPath: "name"})
@@ -64,26 +68,23 @@
 
     @param {String} storeName The name of the store the transaction is for
     @param {String} indexName (optional) The index to match against
-    @param {String} value     (optional) The value of the index to match
+    @param {String} range     (optional) The range of values to retrieve
     @returns {Object} with deferred, transaction and store
   */
-  function getAll(storeName, indexName, value) {
+  function getAll(storeName, indexName, range) {
     var trans = transaction(storeName, "readonly"),
         all = [],
-        cursor, index, range;
+        cursor, index;
 
     trans.oncomplete = undefined;
 
     // Target records matching an index value
     if (indexName){
       index = trans.store.index(indexName);
-      if (typeof value != 'undefined') {
-        range = IDBKeyRange.only(value);
-      }
-      cursor = index.openCursor(range);
+      cursor = index.openCursor(range, 'prev');
     }
     else {
-      index = trans.store.index('timestamp');
+      index = trans.store.index('addedOn');
       range = IDBKeyRange.lowerBound(0);
       cursor = index.openCursor(range, 'prev');
     }
@@ -106,6 +107,62 @@
     return trans.deferred.promise();
   }
 
+  /**
+    Change a value on a gif
+
+    @param {Object} gif The gif object to update
+    @param {String} property  The property to updated
+    @param {Variant} value The value to set the property to
+    @return Promise
+  */
+  function changeGifProperty(gif, property, value) {
+    var dfd = new jQuery.Deferred();
+
+    Store2.getByID(gif.id).then((function(foundGif){
+      var trans = transaction('gifs');
+
+      gif = foundGif || gif;
+      gif[property] = value;
+
+      trans.store.put(gif);
+      trans.deferred.then(function(){
+        dfd.resolve(gif);
+      });
+    }).bind(this));
+
+    return dfd.promise();
+  }
+
+
+  /**
+    Checks if gif ID exists in a specific list
+
+    @params {String} list The list to check the gif against ("history" or "favorites")
+    @params {String} id The ID to check the list for
+    @return Promise
+  */
+  function inList(list, id) {
+    var dfd = new jQuery.Deferred(),
+        trans = transaction('gifs', "readonly"),
+        index, range, request;
+
+    if (list != 'history' && list != 'favorites') {
+      throw 'Invalid list type specified "'+ list +'"';
+    }
+
+    index = trans.store.index("id, "+ list);
+    range = IDBKeyRange.bound([id, 1], [id, Date.now()]);
+
+    request = index.get(range);
+    request.onsuccess = function(event) {
+      dfd.resolve(!!event.target.result);
+    }
+    request.onerror = function(event){
+      dfd.reject(event.value)
+    }
+
+    return dfd.promise();
+  }
 
   /**
     The Storage API for the entire app
@@ -161,20 +218,21 @@
     },
 
     /**
-      Get an object by ID
+      Get a gif object by ID
 
-      @param {String} storeName The name of the store to get the object from
-      @param {String} id The ID to search for
+      @param {String} id The gif ID to search for
       @return {Promise}
     */
-    getByID: function(storeName, id) {
+    getByID: function(id) {
       var dfd = new jQuery.Deferred(),
-          trans = db.transaction([storeName], 'readonly'),
-          req = trans.objectStore(storeName).get(id);
+          trans = db.transaction(['gifs'], 'readonly'),
+          req;
 
       trans.onerror = function(e) {
         dfd.reject(e.value)
       };
+
+      req = trans.objectStore('gifs').get(id)
       req.onerror = function(e) {
         dfd.reject(e.value)
       };
@@ -189,14 +247,7 @@
       Get all the gifs
     */
     getGifs: function(){
-      var promise = getAll('gifs');
-
-      // Update local map
-      promise.then((function(gifs){
-        this.gifIds = gifs.map(function(g){ return g.id; });
-      }).bind(this));
-
-      return promise;
+      return getAll('gifs', 'favorite, history', IDBKeyRange.bound([0, 0], [0, Date.now()]));
     },
 
     /**
@@ -210,8 +261,12 @@
       // Add all gifs
       gifs.forEach(function(gif){
         try {
-          gif.timestamp = Date.now();
-          trans.store.put(gif);
+          gif.addedOn = Date.now();
+          gif.history = 0;
+          gif.favorited = 0;
+          trans.store.add(gif).onerror = function(e) {
+            e.preventDefault();
+          }
         } catch(e) {
           console.error(e.message);
         }
@@ -263,11 +318,29 @@
     },
 
     /**
-      Clear the all the gifs
+      Clear the all the gifs that aren't favorites or in history
     */
-    clearAllGifs: function() {
-      var trans = transaction('gifs');
-      trans.store.clear();
+    clearFeedGifs: function() {
+      var trans = transaction('gifs'),
+          index = trans.store.index('favorite, history')
+          range = IDBKeyRange.only([0, 0]),
+          cursor = index.openCursor(range);
+
+      trans.oncomplete = undefined;
+      cursor.onsuccess = function(event) {
+        var cursor = event.target.result;
+        if (cursor) {
+          trans.store.delete(cursor.value.id);
+          cursor.continue();
+        }
+        else {
+          trans.deferred.resolve();
+        }
+      };
+      cursor.onerror = function(e) {
+        trans.deferred.reject(e.value)
+      };
+
       this.gifIds = [];
       return trans.deferred.promise();
     },
@@ -281,17 +354,19 @@
       var dfd = new jQuery.Deferred();
 
       // Update local cache and truncate to 20
-      getAll('history').then((function(gifs){
+      getAll('gifs', 'history', IDBKeyRange.lowerBound(1)).then((function(gifs){
         var extra = gifs.slice(20),
             history = gifs.slice(0, 20),
-            removeTrans = transaction('history');
+            removeTrans = transaction('gifs');
 
         this.historyIds = history.map(function(g){ return g.id; });
 
-        // Delete all over 20 items
-        if (extra) {
+        // Remove everything over 20 from history
+        if (extra.length) {
+          console.log('Remove history');
           extra.forEach(function(gif){
-            removeTrans.store.delete(gif.id);
+            gif.history = 0;
+            removeTrans.store.put(gif);
           });
 
           removeTrans.deferred.promise().then((function(){
@@ -312,18 +387,11 @@
       @param {Object} gif The gif to add to the history list
     */
     addToHistory: function(gif) {
-      var trans = transaction('history'),
-          historyGif = _.clone(gif);
-
-      historyGif.timestamp = Date.now();
-      trans.store.put(historyGif);
-
-      // Notify everything
-      trans.deferred.promise().then((function(){
+      var req = changeGifProperty(gif, 'history', Date.now());
+      req.then(function(){
         Messenger.send('history-updated');
-      }).bind(this));
-
-      return trans.deferred.promise();
+      });
+      return req;
     },
 
     /**
@@ -332,54 +400,41 @@
       @param {String} id The gif ID to check
     */
     inHistory: function(id){
-      return (this.historyIds.indexOf(id) > -1);
+      return inList('history', id);
     },
 
     /**
       Get favorites
     */
     getFavorites: function(){
-      var promise = getAll('favorites');
-
-      // Update local map
-      promise.then((function(gifs){
-        this.favoriteIds = gifs.map(function(g){ return g.id; });
-      }).bind(this));
-
-      return promise;
+      return getAll('gifs', 'favorited', IDBKeyRange.lowerBound(1));
     },
 
     /**
       Add gif to favorites
 
-      @param {Object} gif The gif to add to the history list
+      @param {Object} gif The gif to add to the favorites list
     */
     addToFavorites: function(gif){
-      var trans = transaction('favorites'),
-          favGif = _.clone(gif);
-
-      console.log('Add fav', favGif.id);
-
-      favGif.timestamp = Date.now();
-      trans.store.put(favGif);
-
-      // Notify everything
-      trans.deferred.promise().then((function(){
+      var req = changeGifProperty(gif, 'favorited', Date.now());
+      req.then(function(){
         Messenger.send('favorites-updated');
-      }).bind(this));
-
-      return trans.deferred.promise();
+      });
+      return req;
     },
 
     /**
       Remove a favorite by ID
 
-      @param {String} id The ID of the favorite to remove
+      @param {Object} gif The gif to remove from favorites
     */
-    removeFavorite: function(id){
-      var trans = transaction('favorites');
-      trans.store.delete(id);
-      return trans.deferred.promise();
+    removeFavorite: function(gif){
+      console.log('remove from favorites')
+      var req = changeGifProperty(gif, 'favorited', 0);
+      req.then(function(){
+        Messenger.send('favorites-updated');
+      });
+      return req;
     },
 
     /**
@@ -388,21 +443,7 @@
       @param {String} id The gif ID to check
     */
     isFavorite: function(id){
-      return (this.favoriteIds.indexOf(id) > -1);
-    },
-
-    /**
-      Get a config value
-    */
-    getConfig: function(name) {
-
-    },
-
-    /**
-      Set a config value
-    */
-    setConfig: function(name, value) {
-
+      return inList('favorites', id);
     }
   };
 })();

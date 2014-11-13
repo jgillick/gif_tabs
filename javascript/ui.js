@@ -22,33 +22,34 @@ var UI_NEXT = 1,
 
       // Load from storage, then build page
       Store2.init().then((function(){
-        Store2.getGifs().then((function(){
+        Store2.getGifs().then((function(gifs){
           Store.load(null).then((function(){
-            var cachedId;
+            var id;
 
             this.updateSettings();
             this.setTheme(Store.settings.theme);
 
-            // Attempt to find a cached ID
+            // Attempt to find an ID in the URL
             if (document.location.hash.length > 1) {
-              cachedId = document.location.hash.substr(5); // #gif=123
+              id = document.location.hash.substr(5); // #gif=123
             }
+            // In the hidden form field
             else if ($("#gifid").val() != '') {
-              cachedId = $("#gifid").val();
+              id = $("#gifid").val();
             }
 
             // No gifs
-            if (Store2.gifIds.length == 0) {
+            if (gifs.length == 0) {
               Gifs.loadNewGifs().then(this.showRandomGif.bind(this));
             }
 
             // Attempt to load existing gif (from location hash)
-            if (cachedId) {
-              Store2.getByID('history', cachedId)
+            else if (id) {
+              Store2.getByID(id)
               .then((function(gif){
                 this.showGif(gif);
                 this.buildHistory();
-                historyIndex = Store2.historyIds.indexOf(cachedId);
+                historyIndex = Store2.historyIds.indexOf(id);
                 Gifs.loadNewGifs();
               }).bind(this))
               .fail((function(){
@@ -98,13 +99,10 @@ var UI_NEXT = 1,
       Select a gif at random and display it
     */
     showRandomGif: function() {
-      var gif = Gifs.random();
-      if (gif) {
-        historyIndex = 0;
+      Gifs.random().then((function(gif){
         Store2.addToHistory(gif);
         this.showGif(gif);
-        Store.randomChooseCount++;
-      }
+      }).bind(this));
     },
 
     /**
@@ -169,8 +167,7 @@ var UI_NEXT = 1,
       }
 
       // Is it a favorite
-      isFav = !!_.findWhere(Store.favorites, {id: gif.id});
-      container.toggleClass('favorite', isFav);
+      this.isFavorite();
 
       // Finish up
       container.removeClass('loading');
@@ -222,7 +219,6 @@ var UI_NEXT = 1,
 
         // New image
         if (img.attr('id') != gif.id) {
-
           img.removeClass('loaded');
           img.addClass('loading');
 
@@ -245,7 +241,7 @@ var UI_NEXT = 1,
 
 
           // Other attributes
-          img.attr('id', gif.id);
+          img.attr('data-id', gif.id);
           img.attr('alt', gif.title);
           img.attr('title', gif.title);
           img.attr('data-index', i);
@@ -291,9 +287,29 @@ var UI_NEXT = 1,
       @return True if the gif is marked as favorite
     */
     isFavorite: function(){
-      isFav = Gifs.isFavorite(this.currentGif.id)
-      $('section.main').toggleClass('favorite', isFav);
-      return isFav;
+      return Gifs.isFavorite(this.currentGif.id).then(function(isFav){
+        $('section.main').toggleClass('favorite', isFav);
+      });
+    },
+
+    /**
+      Update the history selection and arrows
+    */
+    updateHistorySelection: function(){
+      var body = $(document.body),
+          selected = $('section.history ul li.selected'),
+          all = $('section.history ul li'),
+          targetId = (this.currentGif) ? this.currentGif.id : null,
+          targetEl = (targetId) ? $('section.history ul li img[data-id='+ targetId +']') : [];
+
+      selected.removeClass('selected');
+      if (targetEl.length) {
+        targetEl.parent('li').addClass('selected');
+      }
+
+      // Set location classes
+      body.toggleClass('history-first', (targetEl.length && targetEl.data('index') == 0));
+      body.toggleClass('history-last', (targetEl.length && targetEl.data('index') == all.length - 1));
     },
 
     /**
@@ -311,34 +327,55 @@ var UI_NEXT = 1,
     buildHistory: function() {
       Store2.getHistory().then((function(history){
         this.buildList(history, $('section.history'));
+        this.updateHistorySelection();
       }).bind(this));
     },
 
     /**
       Change the history element we're viewing, either next or previous
 
-      @param {int} dir The direction to me (1 = next, -1 = previous)
+      @param {int} dir The direction to move (UI_NEXT, UI_PREV)
     */
     historyIncrement: function(dir) {
+      var list = $('section.history ul'),
+          selected = list.find('li.selected').first(),
+          target;
 
-      // Set index
-      historyIndex += dir;
-      if (this.currentGif && Store.history[historyIndex] == this.currentGif.id) {
-        historyIndex += dir;
-      }
-      if (historyIndex < -1) {
-        historyIndex = -1;
+      // Validate input
+      if (dir != UI_NEXT && dir != UI_PREV) {
+        return false;
       }
 
-      // Show history gif
-      if (Store.history[historyIndex]) {
-        this.showGif(Gifs.forID(Store.history[historyIndex]));
+      // Previous image in the history
+      if (dir == UI_NEXT && selected.length) {
+        target = selected.prev('li');
       }
-      // Out of range, show random
+      // Next image
+      else if (dir == UI_PREV) {
+        if (selected.length) {
+          target = selected.next('li');
+
+          // At the first item in history, cancel increment
+          if (!target.length) {
+            return;
+          }
+        } else {
+          list.find('li:first-child');
+        }
+      }
+
+
+      // New selection
+      if (target && target.length) {
+        Store2.getByID(target.find('img').attr('data-id')).then((function(gif){
+          this.showGif(gif);
+          this.updateHistorySelection();
+        }).bind(this));
+      }
+      // No history item found, show new image
       else {
         this.showRandomGif();
       }
-      this.buildHistory();
     },
 
     /**

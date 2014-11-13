@@ -16,31 +16,29 @@ window.Gifs = {
     Return a random gif
   */
   random: function(){
-    Store.gifs = _.compact(Store.gifs);
+    var dfd = new jQuery.Deferred();
 
-    var i, gif,
-        tries = 0,
-        numGifs = Store.gifs.length,
-        numHist = _.compact(Store.history).length;
+    Store2.getGifs().then(function(gifs){
+      var i, gif,
+          tries = 0,
+          numGifs = gifs.length;
 
-    // Be sure to remove any undefined parts of the gif array
-    if (Store.gifs.length == 0) {
-      throw "No gifs are loaded yet";
-    }
+      // Loop until we find a good random one
+      do {
+        i = Math.round(Math.random() * numGifs),
+        gif = gifs[i];
 
-    // Loop until we find a good random one
-    do {
-      i = Math.round(Math.random() * numGifs),
-      gif = Store.gifs[i];
+        // It has already been used
+        if (gif && gif.history > 0 && tries < 10) {
+          gif = null;
+          tries++;
+        }
+      } while(!gif && tries < 20);
 
-      // It has already been used
-      if (gif && Store.history.indexOf(gif.id) > -1 && tries < 10) {
-        gif = null;
-        tries++;
-      }
-    } while(!gif && tries < 20);
+      dfd.resolve(gif);
+    });
 
-    return gif;
+    return dfd.promise();
   },
 
   /**
@@ -67,7 +65,7 @@ window.Gifs = {
 
     // Don't load new gifs unless it's been 12 hours
     // or we've gone through at least 1/4 of the existing pool
-    if (false && forceUpdate !== true
+    if (forceUpdate !== true
         && gifLen > 0
         && now - Store.lastFeedUpdate < (60 * 60 * 6 * 1000)) {
       dfd.resolve();
@@ -77,7 +75,7 @@ window.Gifs = {
     Store.lastFeedUpdate = now;
 
     // Clear all gifs, then load new ones
-    Store2.clearAllGifs().then((function(){
+    Store2.clearFeedGifs().then((function(){
 
       // Reddit
       if (Store.settings.reddit !== false) {

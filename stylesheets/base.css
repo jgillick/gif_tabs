@@ -60,10 +60,17 @@ body {
   display: none;
 }
 
+/**
+  Hide previous arrow when at beginning of history
+*/
+body.history-last nav .arrow.left {
+  opacity: 0;
+  transition: opacity .3s;
+}
+
 /*
   Favorites Icon
 */
-
 .main figcaption em {
   position: relative;
   display: inline-block;
