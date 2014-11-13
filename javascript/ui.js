@@ -400,8 +400,8 @@ var UI_NEXT = 1,
     UI.buildHistory();
   });
   Messenger.addListener('favorites-updated', function(){
-    UI.isFavorite();
     UI.buildFavorites();
+    UI.isFavorite();
   });
 })();
 
