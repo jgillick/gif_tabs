@@ -62,17 +62,15 @@
     };
   }
 
-
   /**
-    Get all records from a store
+    Get all gif objects which match an index and range
 
-    @param {String} storeName The name of the store the transaction is for
     @param {String} indexName (optional) The index to match against
     @param {String} range     (optional) The range of values to retrieve
     @returns {Object} with deferred, transaction and store
   */
-  function getAll(storeName, indexName, range) {
-    var trans = transaction(storeName, "readonly"),
+  function getAll(indexName, range) {
+    var trans = transaction('gifs', "readonly"),
         all = [],
         cursor, index;
 
@@ -170,11 +168,6 @@
     @class Store
   */
   window.Store2 = {
-    settings: {},
-    lastFeedUpdate: 0,
-    gifIds: [],
-    historyIds: [],
-    favoriteIds: [],
 
     /**
       Init the DB
@@ -247,7 +240,7 @@
       Get all the gifs
     */
     getGifs: function(){
-      return getAll('gifs', 'favorite, history', IDBKeyRange.bound([0, 0], [0, Date.now()]));
+      return getAll('favorite, history', IDBKeyRange.bound([0, 0], [0, Date.now()]));
     },
 
     /**
@@ -281,21 +274,15 @@
     },
 
     /**
-      Delete gifs that match a property and value
+      Remove gifs from a specific feed
 
-      Delete gif by ID:
-          deleteGifsBy('id', 'g123'})
-
-      Delete gif by feed:
-          deleteGifsBy('feed', 'feed'})
-
-      @param Promise
+      @param {String} feed The name of the feed (reddit or giphy)
+      @return Promise
     */
-    deleteGifsBy: function(property, value){
+    removeGifsByFeed: function(feed) {
       var dfd = new jQuery.Deferred();
 
-      // Find gifs matching property/value
-      getAll('gifs', property, value).then((function(gifs){
+      getAll('feed', IDBKeyRange.only(feed)).then((function(gifs){
         var trans = transaction('gifs')
 
         // Delete gifs
@@ -341,7 +328,6 @@
         trans.deferred.reject(e.value)
       };
 
-      this.gifIds = [];
       return trans.deferred.promise();
     },
 
@@ -354,12 +340,10 @@
       var dfd = new jQuery.Deferred();
 
       // Update local cache and truncate to 20
-      getAll('gifs', 'history', IDBKeyRange.lowerBound(1)).then((function(gifs){
+      getAll('history', IDBKeyRange.lowerBound(1)).then((function(gifs){
         var extra = gifs.slice(20),
             history = gifs.slice(0, 20),
             removeTrans = transaction('gifs');
-
-        this.historyIds = history.map(function(g){ return g.id; });
 
         // Remove everything over 20 from history
         if (extra.length) {
@@ -407,7 +391,7 @@
       Get favorites
     */
     getFavorites: function(){
-      return getAll('gifs', 'favorited', IDBKeyRange.lowerBound(1));
+      return getAll('favorited', IDBKeyRange.lowerBound(1));
     },
 
     /**

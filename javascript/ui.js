@@ -49,7 +49,6 @@ var UI_NEXT = 1,
               .then((function(gif){
                 this.showGif(gif);
                 this.buildHistory();
-                historyIndex = Store2.historyIds.indexOf(id);
                 Gifs.loadNewGifs();
               }).bind(this))
               .fail((function(){

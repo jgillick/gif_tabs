@@ -117,7 +117,7 @@ $('.settings input[type=checkbox]').change(function(){
 
   // Update feed
   if (checkbox.is('input[name=image-feed]') && !checkbox.is(':checked')) {
-    Store2.deleteGifsBy('feed', checkbox.val()).then(function(){
+    Store2.removeGifsByFeed(checkbox.val()).then(function(){
 
       // Update current gif
       if (Store.settings[UI.currentGif.feed] === false) {
