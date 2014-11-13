@@ -79,7 +79,7 @@ window.Gifs = {
 
       // Reddit
       if (Store.settings.reddit !== false) {
-        $.get('http://www.reddit.com/r/gifs/.json?limit=100')
+        $.get('http://www.reddit.com/r/gifs/.json?limit=200')
         .then((function(xhr){
           var gifs = [];
 
@@ -114,7 +114,7 @@ window.Gifs = {
 
       // Giphy
       if (Store.settings.giphy !== false) {
-        $.get('http://api.giphy.com/v1/gifs/trending?api_key=11zvNWrJ4cOCJi&limit=100')
+        $.get('http://api.giphy.com/v1/gifs/trending?api_key=11zvNWrJ4cOCJi&limit=200')
         .then((function(xhr){
           var gifs = [];
 
