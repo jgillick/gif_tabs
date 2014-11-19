@@ -76,6 +76,7 @@ var UI_NEXT = 1,
       $('#theme-select').val(Store.settings.theme);
       $('#setting-giphy').attr('checked', Store.settings.giphy);
       $('#setting-reddit').attr('checked', Store.settings.reddit);
+      $('#setting-replygif').attr('checked', Store.settings.replygif);
     },
 
     /**
