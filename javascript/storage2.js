@@ -347,7 +347,6 @@
 
         // Remove everything over 20 from history
         if (extra.length) {
-          console.log('Remove history');
           extra.forEach(function(gif){
             gif.history = 0;
             removeTrans.store.put(gif);
