@@ -4,6 +4,7 @@
     Manage compiling and caching SASS files
   */
   window.SassController  = {
+    cache: [],
 
     /**
       Startup the Sass Controller
@@ -13,13 +14,44 @@
         style: Sass.style.compact,
         comments: Sass.comments.default
       });
+      this.loadCache();
+    },
 
-      // Load cached compiled Sass
-      Store.load('scss').then(function(){
-        for (var path in Store.scss) if (Store.scss.hasOwnProperty(path)) {
-          Sass.writeFile(path, Store.scss[path]);
+    /**
+      Load the cached CSS from local storage
+
+      @returns Promise
+    */
+    loadCache: function(){
+      var dfd = new jQuery.Deferred();
+
+      chrome.storage.local.get('scss', (function(store){
+        this.cache = store.scss;
+        for (var path in this.cache) if (this.cache.hasOwnProperty(path)) {
+          Sass.writeFile(path, this.cache[path]);
         }
+        dfd.resolve(this.cache);
+      }).bind(this));
+
+      return dfd.promise();
+    },
+
+    /**
+      Add compiled SCSS to cache
+
+      @param {String} path The path to the SCSS file we're caching
+      @param {String} css  The compiled CSS
+      @return Promise
+    */
+    addToCache: function(path, css) {
+      var dfd = new jQuery.Deferred();
+
+      this.cache[path] = css;
+      chrome.storage.local.set({scss: this.cache}, function(){
+        dfd.resolve();
       });
+
+      return dfd.promise();
     },
 
     /**
@@ -80,8 +112,7 @@
         this.import("@import '"+ path +"';", id);
 
         // Cache
-        Store.scss[path] = css;
-        Store.save('scss');
+        this.addToCache(path, css);
       } catch(e) {
         console.error(e.message);
       }
