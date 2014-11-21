@@ -25,7 +25,7 @@
       store.createIndex('history',   'history',   {unique: false});
       store.createIndex('addedOn',   'addedOn',   {unique: false});
       store.createIndex('id, history',             ['id', 'history'], {unique: false});
-      store.createIndex('id, favorites',          ['id', 'favorited'], {unique: false});
+      store.createIndex('id, favorites',           ['id', 'favorited'], {unique: false});
       store.createIndex('favorite, history',       ['favorited', 'history'], {unique: false});
       store.createIndex('feed, favorite, history', ['feed', 'favorited', 'history'], {unique: false});
 
@@ -173,7 +173,7 @@
       Init the DB
     */
     init: function(){
-      // indexedDB.deleteDatabase('gif_tabs')
+      // indexedDB.deleteDatabase('gif_tabs');
       var dfd = new jQuery.Deferred(),
           request = indexedDB.open("gif_tabs", chrome.app.getDetails().version);
 
@@ -311,6 +311,7 @@
       Add an array of gifs to the DB
 
       @param {Array} gifs An array of gif objects
+      @return Promise
     */
     addGifs: function(gifs) {
       var trans = transaction();
@@ -320,7 +321,7 @@
         try {
           gif.addedOn = Date.now();
           gif.history = 0;
-          gif.favorited = 0;
+          gif.favorited = gif.favorited || 0;
           trans.store.add(gif).onerror = function(e) {
             e.preventDefault();
           }
@@ -461,10 +462,29 @@
       @param {Object} gif The gif to add to the favorites list
     */
     addToFavorites: function(gif){
-      var req = changeGifProperty(gif, 'favorited', Date.now());
+      var now = Date.now(),
+          req = changeGifProperty(gif, 'favorited', now);
       req.then(function(){
         Messenger.send('favorites-updated');
       });
+
+      // Sync with cloud
+      chrome.storage.sync.get('favorites', function(data){
+        data.favorites = data.favorites || {};
+
+        if (!data.favorites[gif.id]) {
+          data.favorites[gif.id] = now;
+
+          chrome.storage.sync.set(data, function(){
+            if (chrome.runtime.lastError) {
+              console.error('Error trying to sync the favorites: ', runtime.lastError);
+            } else {
+              console.log('Favorites synced');
+            }
+          });
+        }
+      });
+
       return req;
     },
 
@@ -474,11 +494,26 @@
       @param {Object} gif The gif to remove from favorites
     */
     removeFavorite: function(gif){
-      console.log('remove from favorites')
       var req = changeGifProperty(gif, 'favorited', 0);
       req.then(function(){
         Messenger.send('favorites-updated');
       });
+
+      // Sync with cloud
+      chrome.storage.sync.get('favorites', function(data){
+        data.favorites = data.favorites || {};
+        if (data.favorites[gif.id]) {
+          delete data.favorites[gif.id];
+          chrome.storage.sync.set(data, function(){
+            if (chrome.runtime.lastError) {
+              console.error('Error trying to sync the favorites: ', runtime.lastError);
+            } else {
+              console.log('Favorites synced');
+            }
+          });
+        }
+      });
+
       return req;
     },
 
@@ -489,6 +524,80 @@
     */
     isFavorite: function(id){
       return inList('favorites', id);
+    },
+
+    /**
+      Get the favorites from the cloud and update our list
+      (assume the cloud has the correct list)
+    */
+    syncFavorites: function(){
+      var dfd = new jQuery.Deferred();
+
+      console.log('Sync favs');
+
+      // Get favorites from the cloud
+      chrome.storage.sync.get('favorites', (function(data){
+        var cloudFavs = data.favorites || {};
+
+        // Get favorites from the DB
+        this.getFavorites().then((function(localFavs){
+          var queue = [];
+
+          // Prune favs not in clouse
+          localFavs.forEach((function(fav){
+            if (!cloudFavs[fav.id]) {
+              console.log('Remove', fav.id);
+              changeGifProperty(fav, 'favorited', 0)
+            }
+          }).bind(this));
+
+          // Add new favs
+          _.each(cloudFavs, (function(timestamp, id){
+            var found = null;
+
+            localFavs.every(function(f){
+              if (f.id == id) {
+                found = f;
+                return false;
+              }
+              return true;
+            });
+
+            // Add to favs
+            if (found) {
+              console.log('Found', id);
+              if (found.favorited == 0) {
+                console.log('Add', id);
+                changeGifProperty(found, 'favorited', timestamp);
+              }
+            }
+            // Queue up to load from the feed
+            else {
+              console.log('Add to queue');
+              queue.push(id);
+            }
+
+          }).bind(this));
+
+          // Load images from the feeds
+          if (queue.length) {
+            Feeds.get(queue).then((function(gifs){
+              console.log('Returned from queue', gifs);
+
+              // Add timestamps then add to DB
+              gifs.forEach((function(gif){
+                gif.favorited = localFavs[gif.id] || 0;
+              }).bind(this));
+
+              this.addGifs(gifs).then(dfd.resolve);
+            }).bind(this));
+          } else {
+            dfd.resolve();
+          }
+        }).bind(this));
+      }).bind(this));
+
+      return dfd.promise();
     }
   };
 })();

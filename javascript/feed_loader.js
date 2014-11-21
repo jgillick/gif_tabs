@@ -4,7 +4,7 @@
   /**
     The maximum number of gifs to load for any given feed
   */
-  var limiPerFeed = 300;
+  var limiPerFeed = 200;
 
   /**
     List of enabled handlers and keyed by their ID prefixes
@@ -59,9 +59,9 @@
 
       // Group the IDs into feeds
       id.forEach(function(id){
-        var prefix = id.split(':', 1)[0];
+        var prefix = id.split('-', 1)[0];
 
-        if (!prefix || !handler[prefix]) {
+        if (!prefix || !handlers[prefix]) {
           console.error("Gif does not have a valid prefix, ", id);
         }
         else {
@@ -80,8 +80,7 @@
         handlers[prefix].get(group)
         .then(function(gifs){
           if (gifs) {
-            gifs = (!_.isArray(gifs)) ? [gifs] : gifs;
-            allGifs.concat(gifs);
+            allGifs = allGifs.concat(gifs);
             resolved++;
           }
         })
@@ -117,7 +116,7 @@
       @return {Object} Gif object
     */
     normalizeGif: function(data){
-      var id = this.prefix +':'+ data.id,
+      var id = this.prefix +'-'+ data.id,
           sources = [data.url];
 
       // Skip NSFW
@@ -175,8 +174,30 @@
       @param {String or Array} id The id (or array of ids) get
       @return Promise
     */
-    get: function(){
+    get: function(id){
+      var gifs = [],
+          rPrefix = new RegExp('^'+ this.prefix +'\-'),
+          dfd = new jQuery.Deferred();
 
+      // Remove prefix
+      id = (!_.isArray(id)) ? [id] : id;
+      gids = id.map(function(i) { return i.replace(rPrefix, ''); });
+      console.log('Get IDs', gids);
+
+      $.get('http://api.giphy.com/v1/gifs?api_key=11zvNWrJ4cOCJi&ids='+ gids.join(','))
+      .then((function(xhr){
+        console.log('Giphy', xhr);
+
+        xhr.data.forEach((function(gif){
+          gif = this.normalizeGif(gif);
+          if (gif) gifs.push(gif);
+        }).bind(this));
+
+        console.log('GET', gifs.length, 'from', this.name);
+        dfd.resolve(gifs);
+      }).bind(this));
+
+      return dfd.promise();
     }
   };
 
@@ -197,7 +218,7 @@
     */
     normalizeGif: function(data){
       var type  = data.url.match(/\.([^\.]*)$/)[1],
-          id    = this.prefix +":"+ data.name;
+          id    = this.prefix +'-'+ data.name;
 
       // Skip
       if (data.over_18 || data.thumbnail == 'nsfw' || (type != 'gif' && type != 'gifv')) {
@@ -220,7 +241,7 @@
       @return Promise
     */
     load: function(){
-      var limit = Math.round(limiPerFeed / 3),
+      var limit = Math.round(limiPerFeed / 2),
           dfd = new jQuery.Deferred();
 
       // Process data coming from reddit from both endpoints
@@ -269,8 +290,30 @@
       @param {String or Array} id The id (or array of ids) get
       @return Promise
     */
-    get: function(){
+    get: function(id){
+      var gifs = [],
+          rPrefix = new RegExp('^'+ this.prefix +'\-'),
+          dfd = new jQuery.Deferred();
 
+      // Remove prefix
+      id = (!_.isArray(id)) ? [id] : id;
+      gids = id.map(function(i) { console.log(rPrefix); return i.replace(rPrefix, ''); });
+      console.log('Get IDs', gids);
+
+      $.get('http://www.reddit.com/by_id/'+ gids.join(',') +'.json')
+      .then((function(xhr){
+
+        xhr.data.children.forEach((function(gif){
+          gif = this.normalizeGif(gif.data);
+          if (gif) gifs.push(gif);
+        }).bind(this));
+
+        console.log('GET', gifs.length, 'from', this.name);
+        dfd.resolve(gifs);
+
+      }).bind(this));
+
+      return dfd.promise();
     }
   };
 
@@ -344,8 +387,28 @@
       @param {String or Array} id The id (or array of ids) get
       @return Promise
     */
-    get: function(){
+    get: function(id){
+      var gifs = [],
+          rPrefix = new RegExp('^'+ this.prefix +'\-'),
+          dfd = new jQuery.Deferred();
 
+      // Remove prefix
+      id = (!_.isArray(id)) ? [id] : id;
+      gids = id.map(function(i) { return i.replace(rPrefix, ''); });
+      console.log('Get IDs', gids);
+
+      $.get('http://replygif.net/api/gifs?tag=&api-key=39YAprx5Yi')
+      .then((function(xhr){
+
+        gifs = xhr.filter(function(gif){
+          return (gids.indexOf(gif.id) > -1);
+        });
+        console.log('GET', gifs.length, 'from', this.name);
+        dfd.resolve(gifs);
+
+      }).bind(this));
+
+      return dfd.promise();
     }
   };
 

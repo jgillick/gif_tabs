@@ -64,6 +64,7 @@ var UI_NEXT = 1,
 
             Gifs.loadNewGifs();
             this.buildFavorites();
+            Gifs.syncFavorites().then(this.buildFavorites.bind(this));
           }).bind(this));
         }).bind(this));
       }).bind(this));
