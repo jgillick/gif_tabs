@@ -21,13 +21,13 @@ var UI_NEXT = 1,
       SassController.importAll();
 
       // Load from storage, then build page
-      Store2.init().then((function(){
-        Store2.getGifs().then((function(gifs){
-          Store.load(null).then((function(){
+      Gifs.init().then((function(){
+        Gifs.getGifs().then((function(gifs){
+          Config.load().then((function(){
             var id;
 
             this.updateSettings();
-            this.setTheme(Store.settings.theme);
+            this.setTheme(Config.settings.theme);
 
             // Attempt to find an ID in the URL
             if (document.location.hash.length > 1) {
@@ -45,7 +45,7 @@ var UI_NEXT = 1,
 
             // Attempt to load existing gif (from location hash)
             else if (id) {
-              Store2.getByID(id)
+              Gifs.getByID(id)
               .then((function(gif){
                 this.showGif(gif);
                 this.buildHistory();
@@ -73,10 +73,10 @@ var UI_NEXT = 1,
       Setup the settings panel
     */
     updateSettings: function() {
-      $('#theme-select').val(Store.settings.theme);
-      $('#setting-giphy').attr('checked', Store.settings.giphy);
-      $('#setting-reddit').attr('checked', Store.settings.reddit);
-      $('#setting-replygif').attr('checked', Store.settings.replygif);
+      $('#theme-select').val(Config.settings.theme);
+      $('#setting-giphy').attr('checked', Config.settings.giphy);
+      $('#setting-reddit').attr('checked', Config.settings.reddit);
+      $('#setting-replygif').attr('checked', Config.settings.replygif);
     },
 
     /**
@@ -91,8 +91,7 @@ var UI_NEXT = 1,
       chooser.val(name);
       SassController.importFile('./themes/'+ name +'.scss', 'theme-css');
 
-      Store.settings.theme = name;
-      Store.save('settings');
+      Config.set('settings.theme', name);
     },
 
     /**
@@ -100,7 +99,7 @@ var UI_NEXT = 1,
     */
     showRandomGif: function() {
       Gifs.random().then((function(gif){
-        Store2.addToHistory(gif);
+        Gifs.addToHistory(gif);
         this.showGif(gif);
       }).bind(this));
     },
@@ -111,7 +110,8 @@ var UI_NEXT = 1,
       @param {Object} gif The gif to show
     */
     showGif: function(gif) {
-      var container = $('section.main'),
+      var body = $(document.body),
+          container = $('section.main'),
           aEl = container.find('a.image'),
           imgEl = container.find('a.image img');
 
@@ -169,6 +169,12 @@ var UI_NEXT = 1,
       // Is it a favorite
       this.isFavorite();
 
+      // Add feed as body class
+      body.removeClass (function (index, css) {
+        return (css.match(/(^|\s)feed-\S+/g) || []).join(' ');
+      });
+      body.addClass('feed-'+ gif.feed);
+
       // Finish up
       container.removeClass('loading');
       $("#gifid").val(gif.id);
@@ -219,6 +225,7 @@ var UI_NEXT = 1,
 
         // New image
         if (img.attr('id') != gif.id) {
+          img.attr('src', 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==');
           img.removeClass('loaded');
           img.addClass('loading');
 
@@ -316,7 +323,7 @@ var UI_NEXT = 1,
       Build favorites list
     */
     buildFavorites: function(){
-      Store2.getFavorites().then((function(favorites){
+      Gifs.getFavorites().then((function(favorites){
         this.buildList(favorites, $('section.favorites'));
       }).bind(this));
     },
@@ -325,7 +332,7 @@ var UI_NEXT = 1,
       Build the history list
     */
     buildHistory: function() {
-      Store2.getHistory().then((function(history){
+      Gifs.getHistory().then((function(history){
         this.buildList(history, $('section.history'));
         this.updateHistorySelection();
       }).bind(this));
@@ -367,7 +374,7 @@ var UI_NEXT = 1,
 
       // New selection
       if (target && target.length) {
-        Store2.getByID(target.find('img').attr('data-id')).then((function(gif){
+        Gifs.getByID(target.find('img').attr('data-id')).then((function(gif){
           this.showGif(gif);
           this.updateHistorySelection();
         }).bind(this));

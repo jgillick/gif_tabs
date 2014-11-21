@@ -10,9 +10,9 @@ $('.main .make-favorite').click(function(evt){
 
   Gifs.isFavorite(UI.currentGif.id).then(function(isFav){
     if (isFav) {
-      Store2.removeFavorite(UI.currentGif);
+      Gifs.removeFavorite(UI.currentGif);
     } else {
-      Store2.addToFavorites(UI.currentGif);
+      Gifs.addToFavorites(UI.currentGif);
     }
   });
 });
@@ -43,7 +43,7 @@ $('section.history, section.favorites').click(function(evt){
 
   if (target.is('img')) {
     id = target.attr('data-id');
-    Store2.getByID(id).then(function(gif){
+    Gifs.getByID(id).then(function(gif){
       UI.showGif(gif);
       UI.updateHistorySelection();
     });
@@ -93,7 +93,6 @@ $('#theme-select').change(function(){
       theme = chooser.val();
 
   UI.setTheme(theme);
-  Store.save('settings');
 });
 
 /**
@@ -104,23 +103,21 @@ $('.settings input[type=checkbox]').change(function(){
       name = this.id.replace(/setting\-/, ''),
       feed = checkbox.data('feed');
 
-  Store.settings[name] = checkbox.is(':checked');
-
   // You need to have at least one feed selected
   if (checkbox.attr('name') == 'image-feed' && $('.settings input[name=image-feed]:checked').length == 0) {
     alert('You need to have at least one image feed service selected');
     this.checked = true;
     return false;
   } else {
-    Store.save('settings');
+    Config.set('settings.'+ name, checkbox.is(':checked'));
   }
 
   // Update feed
   if (checkbox.is('input[name=image-feed]') && !checkbox.is(':checked')) {
-    Store2.removeGifsByFeed(checkbox.val()).then(function(){
+    Gifs.removeGifsByFeed(checkbox.val()).then(function(){
 
       // Update current gif
-      if (Store.settings[UI.currentGif.feed] === false) {
+      if (Config.settings[UI.currentGif.feed] === false) {
         UI.showRandomGif();
       }
     });
@@ -129,6 +126,14 @@ $('.settings input[type=checkbox]').change(function(){
   }
 
   return true;
+});
+
+/**
+  Force reload all feeds
+*/
+$('.settings .reload button').click(function(){
+  Gifs.loadNewGifs(true).then(UI.showRandomGif.bind(UI));
+  return false;
 });
 
 
