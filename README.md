@@ -12,7 +12,7 @@ A chrome extension that shows you a new animated gif for every new tab.
      * [reddit](http://reddit.com/r/gifs/)
      * [replygif](http://replygif.net)
  * Maintains the last gif when refreshing or clicking the browser back button.
- * Shows a history list of recent gifs.
+ * Shows your history of recent gifs.
  * You can add gifs as favorites.
  * Several themes to choose from.
 
@@ -22,6 +22,13 @@ Mouse over the gear icon in the upper left corner of the page to select a differ
 change the image source you want to pull the gifs from.
 
 ## Installation
+
+## From Distribution
+
+The easiest way to install is to grab the latest version from
+the `/dist` directory and drag it onto Chrome.
+
+### From Source
 
  * Clone this repo.
  * In chrome, goto: chrome://extensions/
