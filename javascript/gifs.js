@@ -316,6 +316,11 @@
     addGifs: function(gifs) {
       var trans = transaction();
 
+      // No gifs
+      if (!gifs || gifs.length == 0) {
+        trans.deferred.resolve([]);
+      }
+
       // Add all gifs
       gifs.forEach(function(gif){
         try {
@@ -332,7 +337,9 @@
 
       // Get updated list
       trans.deferred.promise().then((function(gifs){
-        Messenger.send('gifs-updated');
+        if (gifs && gifs.length) {
+          Messenger.send('gifs-updated');
+        }
       }).bind(this));
 
       return trans.deferred.promise();
