@@ -7,15 +7,15 @@
   var limiPerFeed = 200;
 
   /**
-    List of enabled handlers and keyed by their ID prefixes
-    (set at the end of this file)
-  */
-  var handlers = {};
-
-  /**
     Handles loading gifs from all feed handlers
   */
   window.Feeds = {
+
+    /**
+      List of enabled handlers and keyed by their ID prefixes
+      (set at the end of this file)
+    */
+    handlers: {},
 
 
     /**
@@ -26,7 +26,7 @@
     loadAll: function(){
       var dfd = new jQuery.Deferred();
 
-      _.each(handlers, function(handler, prefix){
+      _.each(this.handlers, function(handler, prefix){
         if (Config.settings[handler.name] !== false) {
           handler.load()
             .then(function(gifs){
@@ -61,7 +61,7 @@
       id.forEach(function(id){
         var prefix = id.split('-', 1)[0];
 
-        if (!prefix || !handlers[prefix]) {
+        if (!prefix || !this.handlers[prefix]) {
           console.error("Gif does not have a valid prefix, ", id);
         }
         else {
@@ -77,7 +77,7 @@
       _.each(groups, function(group, prefix){
 
         // Append to gif list
-        handlers[prefix].get(group)
+        this.handlers[prefix].get(group)
         .then(function(gifs){
           if (gifs) {
             allGifs = allGifs.concat(gifs);
@@ -133,10 +133,11 @@
       return {
         id: id,
         url: data.images.original.url,
-        thumb: data.images.fixed_height_still.url,
+        thumb: data.images.fixed_height.url,
         sources: sources,
         feed: this.name,
-        title: data.title
+        title: data.title,
+        description: null
       };
     },
 
@@ -232,7 +233,8 @@
         thumb: data.thumbnail,
         sources: ["http://reddit.com/"+ data.permalink],
         feed: this.name,
-        title: data.title
+        title: data.title,
+        description: null
       };
     },
 
@@ -241,45 +243,47 @@
       @return Promise
     */
     load: function(){
-      var limit = Math.round(limiPerFeed / 2),
+      var gifs = [],
           dfd = new jQuery.Deferred();
 
-      // Process data coming from reddit from both endpoints
-      var processAll = (function(data, feed){
-        var gifs = [];
+      var loadPages = (function (next) {
+        var url = 'http://www.reddit.com/r/gifs/hot.json';
 
-        // Normalize all gif objects
-        data.forEach((function(gif){
-          gif = this.normalizeGif(gif.data);
-          if (gif) gifs.push(gif);
+        if (next) {
+          url += '?after='+ next;
+        }
+
+        $.ajax(url)
+        .then((function(xhr) {
+          var data = xhr.data,
+              next = data.after,
+              records = data.children;
+
+          // Normalize all gif objects
+          records.forEach((function(gif){
+            gif = this.normalizeGif(gif.data);
+            if (gif) gifs.push(gif);
+          }).bind(this));
+
+          // Save gifs to storage
+          if (records.length == 0 || gifs.length >= limiPerFeed) {
+            gifs = gifs.splice(0, limiPerFeed);
+            console.log('Loaded', gifs.length, 'from', this.name);
+            Gifs.addGifs(gifs).then(function(){
+              dfd.resolve(gifs);
+            });
+          }
+
+          // Get next page
+          else {
+            loadPages(next);
+          }
+
         }).bind(this));
 
-        // Save gifs to storage
-        if (gifs.length) {
-          console.log('Loaded', gifs.length, 'from', feed, this.name);
-          Gifs.addGifs(gifs).then(function(){
-            dfd.resolve(gifs);
-          });
-        }
       }).bind(this);
 
-      // Hot gifs
-      $.get('http://www.reddit.com/r/gifs/hot.json?limit='+ limit)
-      .then((function(xhr){
-        processAll(xhr.data.children, 'hot');
-      }).bind(this));
-
-      // Rising gifs
-      $.get('http://www.reddit.com/r/gifs/rising.json?limit='+ limit)
-      .then((function(xhr){
-        processAll(xhr.data.children, 'rising');
-      }).bind(this));
-
-      // Top gifs
-      $.get('http://www.reddit.com/r/gifs/top.json?limit='+ limit)
-      .then((function(xhr){
-        processAll(xhr.data.children, 'top');
-      }).bind(this));
+      loadPages();
 
       return dfd.promise();
     },
@@ -339,7 +343,8 @@
         thumb: data.file,
         sources: [data.url],
         feed: this.name,
-        title: (typeof data.caption == 'string') ? data.caption : ''
+        title: (typeof data.caption == 'string') ? data.caption : '',
+        description: null
       };
     },
 
@@ -412,10 +417,144 @@
     }
   };
 
+  /**
+    =============================
+    ---- Imagur Feed Handlers ----
+    =============================
+  */
+  var Imgur = {
+    name: 'imgur',
+    prefix: 'i',
+    client_id: '97aa3148456ebe1',
 
-  handlers = {
+    /**
+      Return a jQuery Ajax request for an imgur endpoint
+
+      @param {String} endpoint The endpoint to get (i.e. /gallery/r/gifs/)
+      @param {Object} data Any query params to send to the endpoint
+    */
+    ajax: function(endpoint, data) {
+      return $.ajax('https://api.imgur.com/3'+ endpoint, {
+        type: 'GET',
+        data: data,
+        headers: {
+          Authorization: 'Client-ID '+ this.client_id
+        }
+      });
+    },
+
+    /**
+      Normalize the JSON from the server into the standard gif object
+      @param {Object} data Raw gif from the server
+      @return {Object} Gif object
+    */
+    normalizeGif: function(data){
+      if (!data || !data.animated || data.nsfw) {
+        return null;
+      }
+
+      return {
+        id: this.prefix +'-'+ data.id,
+        url: data.link,
+        thumb: data.link,
+        sources: ["http://imgur.com/"+ data.id],
+        feed: this.name,
+        title: data.title,
+        description: data.description
+      };
+    },
+
+    /**
+      Load the entire feed and add to the Gif DB
+      @return Promise
+    */
+    load: function(){
+      var gifs = [],
+          dfd = new jQuery.Deferred();
+
+      var loadPages = (function (p) {
+        p = p || 0;
+
+        this.ajax('/gallery/r/gifs/top/week', { page: p })
+        .then((function(xhr) {
+          var data = xhr.data;
+
+          // Normalize all gif objects
+          data.forEach((function(gif){
+            gif = this.normalizeGif(gif);
+            if (gif) gifs.push(gif);
+          }).bind(this));
+
+          // Save gifs to storage
+          if (data.length == 0 || gifs.length >= limiPerFeed) {
+            gifs = gifs.splice(0, limiPerFeed);
+            console.log('Loaded', gifs.length, 'from', this.name);
+            Gifs.addGifs(gifs).then(function(){
+              dfd.resolve(gifs);
+            });
+          }
+
+          // Get next page
+          else {
+            loadPages(++p);
+          }
+
+        }).bind(this));
+
+      }).bind(this);
+
+      loadPages();
+
+
+      return dfd.promise();
+    },
+
+    /**
+      Load the data for one or more images
+
+      @param {String or Array} id The id (or array of ids) get
+      @return Promise
+    */
+    get: function(id){
+      var gifs = [],
+          responses = 0,
+          rPrefix = new RegExp('^'+ this.prefix +'\-'),
+          dfd = new jQuery.Deferred();
+
+      // Remove prefix
+      id = (!_.isArray(id)) ? [id] : id;
+      gids = id.map(function(i) { return i.replace(rPrefix, ''); });
+      console.log('Get IDs', gids);
+
+      // Get all images by ID
+      gids.forEach((function(id, i){
+
+        this.ajax('/image/'+ id)
+        // Process gif
+        .then((function(xhr) {
+          var gif = this.normalizeGif(xhr.data);
+          if (gif) gifs.push(gif);
+        }).bind(this))
+        // Resolve promise, if all gifs have returned
+        .always((function(){
+          responses++;
+          if (responses == gids.length) {
+            console.log('GET', gifs.length, 'from', this.name);
+            dfd.resolve(gifs);
+          }
+        }).bind(this));
+
+      }).bind(this));
+
+      return dfd.promise();
+    }
+  };
+
+  Feeds.handlers = {
     'g': Giphy,
     'r': Reddit,
+    'i': Imgur,
     'rg': Replygif
-  };
+  }
+
 })();
