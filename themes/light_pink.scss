@@ -1,3 +1,6 @@
+$history-bg: #ECDCE8;
+$history-border: #C28DB1;
+@import 'themes/includes/history';
 
 html {
   background: #fff url(/images/sunburst_pink.png) no-repeat;
@@ -142,49 +145,6 @@ nav div:hover {
       &:hover.selected img {
         opacity: 1;
       }
-    }
-  }
-}
-
-/*
-  History
-*/
-.history {
-  margin: 0 -30px;
-  padding: 15px 0;
-  background: #ECDCE8;
-  border-top: 1px solid #C28DB1;
-
-  .list-wrapper {
-    margin: 0 auto;
-    width: 700px;
-    overflow: hidden;
-  }
-
-  &.empty {
-    display: none;
-  }
-  h1 {
-    width: 700px;
-    margin: 0 auto;
-  }
-  ul {
-    width: 700px;
-    margin: 15px auto 0;
-    transition: transform .5s;
-  }
-
-  // History width for number of items
-  @for $i from 0 through 20 {
-    &.num-#{$i} .list-wrapper ul {
-      width: #{$i * 132}px;
-    }
-  }
-
-  // Move list to selection
-  @for $i from 3 through 20 {
-    &.selected-#{$i} .list-wrapper ul {
-      transform: translateX(calc(-#{$i * 135.6}px + 265px));
     }
   }
 }

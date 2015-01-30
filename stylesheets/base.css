@@ -4,7 +4,12 @@ html {
 
 body {
   font: normal 16px "Terminal Dosis", "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  margin: 40px 30px 0 30px;
+  margin: 30px 30px 0 30px;
+}
+
+figcaption {
+  min-height: 1em;
+  margin: 7px 10px;
 }
 
 /*
@@ -82,7 +87,7 @@ body {
   Hide things when loading
 */
 .main.loading cite,
-.main.loading figcaption em {
+.main.loading .actions .make-favorite {
   display: none;
 }
 
@@ -97,7 +102,7 @@ body.history-last nav .arrow.left {
 /*
   Favorites Icon
 */
-.main figcaption em {
+.main .actions .make-favorite {
   position: relative;
   display: inline-block;
   line-height: inherit;
@@ -110,11 +115,11 @@ body.history-last nav .arrow.left {
   transition: opacity .3s;
   cursor: pointer;
 }
-.main figcaption em:hover,
-.main.favorite figcaption em {
+.main .actions .make-favorite:hover,
+.main.favorite .actions .make-favorite {
   opacity: 1;
 }
-.main figcaption em:before {
+.main .actions .make-favorite:before {
   content: '';
   position: absolute;
   top: 0; bottom: 0;
@@ -124,17 +129,17 @@ body.history-last nav .arrow.left {
   opacity: 0;
   transition: opacity .3s;
 }
-.main figcaption em:hover:before {
+.main .actions .make-favorite:hover:before {
   opacity: 1;
 }
-.main.favorite figcaption em  {
+.main.favorite .actions .make-favorite  {
   background-image: url(/images/favorite-star.png);
 }
-.main.favorite figcaption em:before {
+.main.favorite .actions .make-favorite:before {
   background-image: url(/images/favorite-star-trash.png);
 }
-.main figcaption em.clicked:before,
-.main.favorite figcaption em.clicked:before {
+.main .actions .make-favorite.clicked:before,
+.main.favorite .actions .make-favorite.clicked:before {
   display: none;
 }
 

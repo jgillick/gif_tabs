@@ -14,6 +14,7 @@
         style: Sass.style.compact,
         comments: Sass.comments.default
       });
+      this.initIncludes();
       this.loadCache();
     },
 
@@ -34,6 +35,18 @@
       }).bind(this));
 
       return dfd.promise();
+    },
+
+    /**
+      Setup files in the includes directory
+    */
+    initIncludes: function(){
+      var files = ['themes/includes/_history.scss'];
+
+      files.forEach(function(path) {
+        var css = Module.read(path);
+        Sass.writeFile(path, css);
+      })
     },
 
     /**
@@ -114,7 +127,7 @@
         // Cache
         this.addToCache(path, css);
       } catch(e) {
-        console.error(e.message);
+        console.error(e);
       }
     },
 
