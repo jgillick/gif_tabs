@@ -130,16 +130,16 @@ var UI_NEXT = 1,
         id: gif.id,
         href: gif.url
       });
-      imgEl.attr('src', gif.url);
+      imgEl.attr('src', gif.url.replace(/gifv$/i, 'gif'));
 
       // Title
       if (gif.title && gif.title != '') {
         container.addClass('has-title');
-        container.find('figcaption span').text(gif.title);
+        container.find('figcaption').text(gif.title);
         document.title = "New Tab ("+ gif.title +")";
       } else {
         container.removeClass('has-title');
-        container.find('figcaption span').text('');
+        container.find('figcaption').text('');
         document.title = "New Tab";
       }
 
@@ -260,7 +260,7 @@ var UI_NEXT = 1,
 
         // Is it the current gif being display
         if (this.currentGif && gif.id == this.currentGif.id) {
-          selected = i;
+          selected = index;
           item.addClass('selected');
         } else {
           item.removeClass('selected');
@@ -305,14 +305,23 @@ var UI_NEXT = 1,
     */
     updateHistorySelection: function(){
       var body = $(document.body),
-          selected = $('section.history ul li.selected'),
-          all = $('section.history ul li'),
+          history = $('section.history'),
+          selected = history.find('ul li.selected'),
+          all = history.find('ul li'),
           targetId = (this.currentGif) ? this.currentGif.id : null,
-          targetEl = (targetId) ? $('section.history ul li img[data-id='+ targetId +']') : [];
+          targetEl = (targetId) ? history.find('ul li img[data-id='+ targetId +']') : [],
+          index;
 
       selected.removeClass('selected');
       if (targetEl.length) {
         targetEl.parent('li').addClass('selected');
+
+        // Set selected index
+        index = all.index(targetEl.parent('li'));
+        history.removeClass (function (i, css) {
+          return (css.match (/(^|\s)selected-\d+/g) || []).join(' ');
+        });
+        history.addClass('selected-'+ index);
       }
 
       // Set location classes
