@@ -70,12 +70,12 @@ $('nav .arrow').click(function(evt){
 /**
   If image fails to load, try another one
 */
-$('.main img').error(function(){
-  if (errorCount < 5) {
-    UI.showRandomGif();
-    errorCount++;
-  }
-});
+// $('.main img').error(function(){
+//   if (errorCount < 5) {
+//     UI.showRandomGif();
+//     errorCount++;
+//   }
+// });
 
 /**
   Loaded successfully
@@ -136,6 +136,22 @@ $('.settings .reload button').click(function(){
   return false;
 });
 
+/**
+  Keyboard handlers
+*/
+$(document).keydown(function(evt){
+  var ARROW_LEFT = 37,
+      ARROW_RIGHT = 39;
+
+  switch (evt.which) {
+    case ARROW_LEFT:
+      UI.historyIncrement(UI_PREV);
+    break;
+    case ARROW_RIGHT:
+      UI.historyIncrement(UI_NEXT);
+    break;
+  }
+});
 
 /**
   Window resize
