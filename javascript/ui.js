@@ -151,6 +151,8 @@ var UI_NEXT = 1,
               link = $("<a>"),
               siteName, isFav;
 
+          if (!urlParts) return;
+
           // grab the second to last domain part
           // i.e. www.reddit.com -> reddit
           siteName = urlParts[1].split('.').slice(-2)[0];
