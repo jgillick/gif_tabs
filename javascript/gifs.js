@@ -175,8 +175,16 @@
     init: function(){
       // indexedDB.deleteDatabase('gif_tabs');
       var dfd = new jQuery.Deferred(),
-          request = indexedDB.open("gif_tabs", chrome.app.getDetails().version);
+          version = chrome.app.getDetails().version,
+          verParts, request;
 
+      // Convert version string to float
+      verParts = version.replace(/^([^0-9\.]\.)|[^0-9\.]/, '').split('.');           // Remove non-digits and any leading digit/dot combo
+      version = [verParts.shift(), verParts.join('')].join('.').replace(/\.$/, '');  // Combine first digit, followed by a dot and all the rest
+      version = parseFloat(version);
+
+      // Open DB
+      request = indexedDB.open("gif_tabs", version),
       request.onupgradeneeded = migrations;
       request.onsuccess = function(e) {
         db = e.target.result;
@@ -572,15 +580,12 @@
 
             // Add to favs
             if (found) {
-              console.log('Found', id);
               if (found.favorited == 0) {
-                console.log('Add', id);
                 changeGifProperty(found, 'favorited', timestamp);
               }
             }
             // Queue up to load from the feed
             else {
-              console.log('Add to queue');
               queue.push(id);
             }
 
@@ -589,7 +594,6 @@
           // Load images from the feeds
           if (queue.length) {
             Feeds.get(queue).then((function(gifs){
-              console.log('Returned from queue', gifs);
 
               // Add timestamps then add to DB
               gifs.forEach((function(gif){
