@@ -114,7 +114,8 @@ var UI_NEXT = 1,
       var body = $(document.body),
           container = $('section.main'),
           aEl = container.find('a.image'),
-          imgEl = container.find('a.image img');
+          imgEl = container.find('a.image img'),
+          embedHTML = $('#embed-html');
 
       if (!gif) {
         return;
@@ -130,13 +131,27 @@ var UI_NEXT = 1,
         id: gif.id,
         href: gif.url
       });
-      imgEl.attr('src', gif.url.replace(/gifv$/i, 'gif'));
+
+      // Embedded HTML
+      console.log(gif);
+      if (gif.embed && gif.embed.length) {
+        console.log('Embedded', gif.id);
+        embedHTML.html(gif.embed);
+        embedHTML.show();
+        imgEl.hide();
+      }
+      else {
+        imgEl.attr('src', gif.url.replace(/gifv$/i, 'gif'));
+        embedHTML.html('');
+        embedHTML.hide();
+        imgEl.show();
+      }
 
       // Title
       if (gif.title && gif.title != '') {
         container.addClass('has-title');
         container.find('figcaption').text(gif.title);
-        document.title = "New Tab ("+ gif.title +")";
+        document.title = 'New Tab ('+ gif.title +')';
       } else {
         container.removeClass('has-title');
         container.find('figcaption').text('');

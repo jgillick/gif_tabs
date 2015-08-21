@@ -1,3 +1,4 @@
+'use strict';
 
 (function(){
 
@@ -30,13 +31,13 @@
         if (Config.settings[handler.name] !== false) {
           handler.load()
             .then(function(gifs){
-              dfd.resolve(gifs)
+              dfd.resolve(gifs);
             })
             .fail(function(gifs){
-              dfd.reject(gifs)
+              dfd.reject(gifs);
             });
           }
-      })
+      });
 
       return dfd.promise();
     },
@@ -132,8 +133,10 @@
       // Return object
       return {
         id: id,
-        url: data.images.original.url,
-        thumb: data.images.fixed_height.url,
+        url: data.images.original.webp || data.images.original.url,
+        height: data.images.original.height,
+        width: data.images.original.width,
+        thumb: data.images.fixed_height_still.url,
         sources: sources,
         feed: this.name,
         title: data.title,
@@ -159,7 +162,7 @@
 
         // Save gifs to storage
         if (gifs.length) {
-          console.log('Loaded', gifs.length, 'from', this.name);
+          console.info('Loaded', gifs.length, 'from', this.name);
           Gifs.addGifs(gifs).then(function(){
             dfd.resolve(gifs);
           });
@@ -183,18 +186,16 @@
       // Remove prefix
       id = (!_.isArray(id)) ? [id] : id;
       gids = id.map(function(i) { return i.replace(rPrefix, ''); });
-      console.log('Get IDs', gids);
 
       $.get('http://api.giphy.com/v1/gifs?api_key=11zvNWrJ4cOCJi&ids='+ gids.join(','))
       .then((function(xhr){
-        console.log('Giphy', xhr);
 
         xhr.data.forEach((function(gif){
           gif = this.normalizeGif(gif);
           if (gif) gifs.push(gif);
         }).bind(this));
 
-        console.log('GET', gifs.length, 'from', this.name);
+        console.info('GET', gifs.length, 'from', this.name);
         dfd.resolve(gifs);
       }).bind(this));
 
@@ -219,15 +220,16 @@
     */
     normalizeGif: function(data){
       var type  = data.url.match(/\.([^\.]*)$/)[1],
-          id    = this.prefix +'-'+ data.name;
+          id    = this.prefix +'-'+ data.name,
+          gif   = {};
 
       // Skip
       if (data.over_18 || data.thumbnail == 'nsfw' || (type != 'gif' && type != 'gifv')) {
         return false;
       }
 
-      // Return gif object
-      return {
+      // Build gif object
+      gif = {
         id: id,
         url: data.url,
         thumb: data.thumbnail,
@@ -236,6 +238,33 @@
         title: data.title,
         description: null
       };
+
+      // Static thumbnail
+      try {
+        if (data.preview.images[0].resolutions[1]) {
+          gif.thumb = data.preview.images[0].resolutions[1].url;
+        } else {
+          gif.thumb = data.preview.images[0].resolutions[0].url;
+        }
+        gif.thumb = gif.thumb.replace(/&amp;/g, '&');
+      } catch(e) {}
+
+      // Embedded iframe (decode escaped HTML first)
+      if (data.media_embed && data.media_embed.content) {
+        var el = document.createElement('div');
+        el.innerHTML = data.media_embed.content;
+        el = $(el.firstChild.nodeValue);
+
+        // Add 'http:' to urls that start with '//'
+        if (el.attr('src').match(/^\/\//)) {
+          el.attr('src', 'http:'+ el.attr('src'));
+        }
+
+        gif.url = el.attr('src');
+        gif.embed = $('<div>').append(el).html();
+      }
+
+      return gif;
     },
 
     /**
@@ -268,7 +297,7 @@
           // Save gifs to storage
           if (records.length == 0 || gifs.length >= limiPerFeed) {
             gifs = gifs.splice(0, limiPerFeed);
-            console.log('Loaded', gifs.length, 'from', this.name);
+            console.info('Loaded', gifs.length, 'from', this.name);
             Gifs.addGifs(gifs).then(function(){
               dfd.resolve(gifs);
             });
@@ -297,12 +326,12 @@
     get: function(id){
       var gifs = [],
           rPrefix = new RegExp('^'+ this.prefix +'\-'),
-          dfd = new jQuery.Deferred();
+          dfd = new jQuery.Deferred(),
+          gids;
 
       // Remove prefix
       id = (!_.isArray(id)) ? [id] : id;
-      gids = id.map(function(i) { console.log(rPrefix); return i.replace(rPrefix, ''); });
-      console.log('Get IDs', gids);
+      gids = id.map(function(i) { return i.replace(rPrefix, ''); });
 
       $.get('http://www.reddit.com/by_id/'+ gids.join(',') +'.json')
       .then((function(xhr){
@@ -312,7 +341,7 @@
           if (gif) gifs.push(gif);
         }).bind(this));
 
-        console.log('GET', gifs.length, 'from', this.name);
+        console.info('GET', gifs.length, 'from', this.name);
         dfd.resolve(gifs);
 
       }).bind(this));
@@ -376,7 +405,7 @@
 
         // Save gifs to storage
         if (gifs.length) {
-          console.log('Loaded', gifs.length, 'from', this.name);
+          console.info('Loaded', gifs.length, 'from', this.name);
           Gifs.addGifs(gifs).then(function(){
             dfd.resolve(gifs);
           });
@@ -400,7 +429,6 @@
       // Remove prefix
       id = (!_.isArray(id)) ? [id] : id;
       gids = id.map(function(i) { return i.replace(rPrefix, ''); });
-      console.log('Get IDs', gids);
 
       $.get('http://replygif.net/api/gifs?tag=&api-key=39YAprx5Yi')
       .then((function(xhr){
@@ -408,7 +436,7 @@
         gifs = xhr.filter(function(gif){
           return (gids.indexOf(gif.id) > -1);
         });
-        console.log('GET', gifs.length, 'from', this.name);
+        console.info('GET', gifs.length, 'from', this.name);
         dfd.resolve(gifs);
 
       }).bind(this));
@@ -449,11 +477,13 @@
       @return {Object} Gif object
     */
     normalizeGif: function(data){
+      var gif;
+
       if (!data || !data.animated || data.nsfw) {
         return null;
       }
 
-      return {
+      gif = {
         id: this.prefix +'-'+ data.id,
         url: data.link,
         thumb: data.link,
@@ -462,6 +492,13 @@
         title: data.title,
         description: data.description
       };
+
+      if (data.webm) {
+        gif.url = data.webm;
+        gif.embed = '<video src="'+ data.webm +'" autoplay loop></video>'
+      }
+
+      return gif;
     },
 
     /**
@@ -488,7 +525,7 @@
           // Save gifs to storage
           if (data.length == 0 || gifs.length >= limiPerFeed) {
             gifs = gifs.splice(0, limiPerFeed);
-            console.log('Loaded', gifs.length, 'from', this.name);
+            console.info('Loaded', gifs.length, 'from', this.name);
             Gifs.addGifs(gifs).then(function(){
               dfd.resolve(gifs);
             });
@@ -524,7 +561,6 @@
       // Remove prefix
       id = (!_.isArray(id)) ? [id] : id;
       gids = id.map(function(i) { return i.replace(rPrefix, ''); });
-      console.log('Get IDs', gids);
 
       // Get all images by ID
       gids.forEach((function(id, i){
@@ -539,7 +575,7 @@
         .always((function(){
           responses++;
           if (responses == gids.length) {
-            console.log('GET', gifs.length, 'from', this.name);
+            console.info('GET', gifs.length, 'from', this.name);
             dfd.resolve(gifs);
           }
         }).bind(this));

@@ -1,3 +1,5 @@
+'use strict';
+
 
 (function(){
   var db = null,
@@ -16,22 +18,25 @@
       throw "Could not update DB: "+ e.value;
     }
 
-    if (newVersion == 1) {
+    switch (newVersion) {
+      case 1:
 
-      // Create gifs stores
-      var store = db.createObjectStore('gifs', {keyPath: "id"});
-      store.createIndex('feed',      'feed',      {unique: false});
-      store.createIndex('favorited', 'favorited', {unique: false});
-      store.createIndex('history',   'history',   {unique: false});
-      store.createIndex('addedOn',   'addedOn',   {unique: false});
-      store.createIndex('id, history',             ['id', 'history'], {unique: false});
-      store.createIndex('id, favorites',           ['id', 'favorited'], {unique: false});
-      store.createIndex('favorite, history',       ['favorited', 'history'], {unique: false});
-      store.createIndex('feed, favorite, history', ['feed', 'favorited', 'history'], {unique: false});
+        // Create gifs stores
+        var store = db.createObjectStore('gifs', {keyPath: "id"});
+        store.createIndex('feed',      'feed',      {unique: false});
+        store.createIndex('favorited', 'favorited', {unique: false});
+        store.createIndex('history',   'history',   {unique: false});
+        store.createIndex('addedOn',   'addedOn',   {unique: false});
+        store.createIndex('id, history',             ['id', 'history'], {unique: false});
+        store.createIndex('id, favorites',           ['id', 'favorited'], {unique: false});
+        store.createIndex('favorite, history',       ['favorited', 'history'], {unique: false});
+        store.createIndex('feed, favorite, history', ['feed', 'favorited', 'history'], {unique: false});
 
-      // Settings & config store
-      db.createObjectStore('config', {keyPath: "name"})
-        .createIndex("timestamp", "timestamp", { unique: false });
+        // Settings & config store
+        db.createObjectStore('config', {keyPath: "name"})
+          .createIndex("timestamp", "timestamp", { unique: false });
+
+      break;
     }
   }
 
@@ -293,7 +298,7 @@
           limiPerFeed = 300;
 
       this.gifCount().then((function(gifLen){
-        console.log('All gifs', gifLen);
+        console.info('All gifs', gifLen);
 
         // Don't load new gifs unless it's been 12 hours
         // or we've gone through at least 1/4 of the existing pool
@@ -494,7 +499,7 @@
             if (chrome.runtime.lastError) {
               console.error('Error trying to sync the favorites: ', runtime.lastError);
             } else {
-              console.log('Favorites synced');
+              console.info('Favorites synced');
             }
           });
         }
@@ -523,7 +528,7 @@
             if (chrome.runtime.lastError) {
               console.error('Error trying to sync the favorites: ', runtime.lastError);
             } else {
-              console.log('Favorites synced');
+              console.info('Favorites synced');
             }
           });
         }
@@ -548,8 +553,6 @@
     syncFavorites: function(){
       var dfd = new jQuery.Deferred();
 
-      console.log('Sync favs');
-
       // Get favorites from the cloud
       chrome.storage.sync.get('favorites', (function(data){
         var cloudFavs = data.favorites || {};
@@ -561,7 +564,7 @@
           // Prune favs not in clouse
           localFavs.forEach((function(fav){
             if (!cloudFavs[fav.id]) {
-              console.log('Remove', fav.id);
+              console.info('Remove', fav.id);
               changeGifProperty(fav, 'favorited', 0)
             }
           }).bind(this));

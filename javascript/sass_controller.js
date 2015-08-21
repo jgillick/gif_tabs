@@ -1,10 +1,12 @@
+'use strict';
+
 (function(){
 
   /**
     Manage compiling and caching SASS files
   */
   window.SassController  = {
-    cache: [],
+    cache: {},
 
     /**
       Startup the Sass Controller
