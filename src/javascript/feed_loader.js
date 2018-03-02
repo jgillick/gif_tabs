@@ -53,7 +53,8 @@
           resolved = 0,
           groups = {},
           groupCount = 0,
-          allGifs = [];
+          allGifs = []
+          self = this;
 
       id = (!_.isArray(id)) ? [id] : id;
       id = id.sort();
@@ -62,7 +63,7 @@
       id.forEach(function(id){
         var prefix = id.split('-', 1)[0];
 
-        if (!prefix || !this.handlers[prefix]) {
+        if (!prefix || !self.handlers[prefix]) {
           console.error("Gif does not have a valid prefix, ", id);
         }
         else {
@@ -78,7 +79,7 @@
       _.each(groups, function(group, prefix){
 
         // Append to gif list
-        this.handlers[prefix].get(group)
+        self.handlers[prefix].get(group)
         .then(function(gifs){
           if (gifs) {
             allGifs = allGifs.concat(gifs);
@@ -487,15 +488,22 @@
         id: this.prefix +'-'+ data.id,
         url: data.link,
         thumb: data.link,
-        sources: ["http://imgur.com/"+ data.id],
+        sources: [`http://imgur.com/${data.id}`],
         feed: this.name,
         title: data.title,
         description: data.description
       };
 
-      if (data.webm) {
-        gif.url = data.webm;
-        gif.embed = '<video src="'+ data.webm +'" autoplay loop></video>'
+      // High-quality video
+      var embeddable = data.mp4 || data.webm || data.gifv;
+      if (embeddable){
+        gif.url = embeddable;
+        gif.embed = `<video src="${embeddable}" autoplay loop></video>`;
+      }
+
+      // Broken thumbnail
+      if (!data.link && data.gifv) {
+        data.thumb = data.gifv.replace(/gifv$/i, 'gif');
       }
 
       return gif;

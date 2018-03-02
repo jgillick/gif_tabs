@@ -16,27 +16,23 @@
 
     event.target.transaction.onerror = function(e){
       throw "Could not update DB: "+ e.value;
-    }
+    };
 
-    switch (newVersion) {
-      case 1:
+    if (oldVersion < 2) {
+      // Create gifs stores
+      var store = db.createObjectStore('gifs', {keyPath: "id"});
+      store.createIndex('feed',      'feed',      {unique: false});
+      store.createIndex('favorited', 'favorited', {unique: false});
+      store.createIndex('history',   'history',   {unique: false});
+      store.createIndex('addedOn',   'addedOn',   {unique: false});
+      store.createIndex('id, history',             ['id', 'history'], {unique: false});
+      store.createIndex('id, favorites',           ['id', 'favorited'], {unique: false});
+      store.createIndex('favorite, history',       ['favorited', 'history'], {unique: false});
+      store.createIndex('feed, favorite, history', ['feed', 'favorited', 'history'], {unique: false});
 
-        // Create gifs stores
-        var store = db.createObjectStore('gifs', {keyPath: "id"});
-        store.createIndex('feed',      'feed',      {unique: false});
-        store.createIndex('favorited', 'favorited', {unique: false});
-        store.createIndex('history',   'history',   {unique: false});
-        store.createIndex('addedOn',   'addedOn',   {unique: false});
-        store.createIndex('id, history',             ['id', 'history'], {unique: false});
-        store.createIndex('id, favorites',           ['id', 'favorited'], {unique: false});
-        store.createIndex('favorite, history',       ['favorited', 'history'], {unique: false});
-        store.createIndex('feed, favorite, history', ['feed', 'favorited', 'history'], {unique: false});
-
-        // Settings & config store
-        db.createObjectStore('config', {keyPath: "name"})
-          .createIndex("timestamp", "timestamp", { unique: false });
-
-      break;
+      // Settings & config store
+      db.createObjectStore('config', {keyPath: "name"})
+        .createIndex("timestamp", "timestamp", { unique: false });
     }
   }
 
@@ -189,15 +185,15 @@
       version = parseFloat(version);
 
       // Open DB
-      request = indexedDB.open("gif_tabs", version),
+      request = indexedDB.open("gif_tab", version);
       request.onupgradeneeded = migrations;
       request.onsuccess = function(e) {
         db = e.target.result;
         dfd.resolve();
       };
       request.onerror = function(e){
-        dfd.reject(e.value)
-      }
+        dfd.reject(e.value);
+      };
 
       return dfd.promise();
     },

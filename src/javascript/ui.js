@@ -18,12 +18,10 @@ var UI_NEXT = 1,
     */
     init: function() {
 
-      SassController.importAll();
-
       // Load from storage, then build page
-      Gifs.init().then((function(){
-        Gifs.getGifs().then((function(gifs){
-          Config.load().then((function(){
+      Config.load().then((function(){
+        Gifs.init().then((function(){
+          Gifs.getGifs().then((function(gifs){
             var id;
 
             this.updateSettings();
@@ -88,9 +86,8 @@ var UI_NEXT = 1,
     setTheme: function(name) {
       var chooser = $('#theme-select');
 
-      //stylesheet.attr('href', '/themes/'+ name +'.css');
       chooser.val(name);
-      SassController.importFile('./themes/'+ name +'.scss', 'theme-css');
+      $('#theme-css').attr('href', './themes/'+ name +'.css');
 
       Config.set('settings.theme', name);
     },

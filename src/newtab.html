@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>New Tab</title>
+  <link href='http://fonts.googleapis.com/css?family=Terminal+Dosis:400,700' rel='stylesheet' type='text/css'>
+  <!-- <link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'> -->
+  <link href="./stylesheets/base.css" type="text/css" rel="stylesheet" />
+  <link id="theme-css" href="./themes/light_gray.css" type="text/css" rel="stylesheet" />
+
+  <script src="./javascript/frameworks/jquery-2.1.1.min.js" type="text/javascript"></script>
+  <script src="./javascript/frameworks/underscore-min.js" type="text/javascript"></script>
+  <script src="./javascript/frameworks/radio.min.js" type="text/javascript"></script>
+  <script src="./javascript/frameworks/sass.min.js" type="text/javascript"></script>
+
+  <script src="./javascript/messenger.js" type="text/javascript"></script>
+  <script src="./javascript/feed_loader.js" type="text/javascript"></script>
+  <script src="./javascript/config.js" type="text/javascript"></script>
+  <script src="./javascript/gifs.js" type="text/javascript"></script>
+</head>
+<body>
+
+  <section class="main loading">
+    <figure>
+      <figcaption>
+        Loading...
+      </figcaption>
+      <p>
+        <a href="#" class="image">
+          <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==
+    " />
+          <span id="embed-html"></span>
+        </a>
+        </div>
+        <p><cite>Source: <span></span></cite></p>
+      </p>
+      <p class="actions">
+        <em href="#favorites" class="make-favorite" title="Add to favorites">(add to favorites)</em>
+      </p>
+    </figure>
+    <nav>
+      <div class="arrow left" title="Previous gif">Previous</div>
+      <div class="arrow right" title="New random gif">Next</div>
+    </nav>
+  </section>
+
+  <section id="history" class="history empty">
+    <h1>Recent Gifs</h1>
+    <div class="list-wrapper">
+      <ul></ul>
+    </div>
+  </section>
+
+  <section id="favorites" class="favorites empty">
+    <h1 title="Favorites">Favorites</h1>
+    <div class="list-wrapper">
+      <ul></ul>
+    </div>
+  </section>
+
+
+  <form class="settings">
+    <h1>Settings</h1>
+    <ol>
+      <li class="theme">
+        <label for="theme-select">Theme:</label>
+        <select id="theme-select">
+          <option value="dark">Dark Room</option>
+          <option value="dark_blue">Dark Blue</option>
+          <option value="light_gray">Light</option>
+          <option value="light_gray_compact">Light Compact</option>
+          <option value="light_pink">Light Pink</option>
+          <option value="light_pink_compact">Light Pink Compact</option>
+        </select>
+      </li>
+      <li class="feed">
+        <input type="checkbox" id="setting-giphy" name="image-feed" value="giphy" checked />
+        <label for="setting-giphy">Giphy</label>
+      </li>
+      <li class="feed">
+        <input type="checkbox" id="setting-imgur" name="image-feed" value="imgur" checked />
+        <label for="setting-replygif">Imgur</label>
+      </li>
+      <li class="feed">
+        <input type="checkbox" id="setting-reddit" name="image-feed" value="reddit" checked />
+        <label for="setting-reddit">Reddit</label>
+      </li>
+      <li class="feed">
+        <input type="checkbox" id="setting-replygif" name="image-feed" value="replygif" checked />
+        <label for="setting-replygif">Replygif</label>
+      </li>
+      <li class="reload">
+        <button>Reload all feeds</button>
+      </li>
+    </ol>
+  </form>
+
+  <div id="powered-by-giphy">
+    <a href="http://giphy.com">
+      <img src="/images/powered-by-giphy.gif" width="73" height="27" alt="Powered by Giphy" /></a>
+  </div>
+
+  <!-- For back button recall -->
+  <form class="browser-cache">
+    <input type="text" id="gifid" value="" />
+    <input type="text" id="history-index" value="" />
+  </form>
+
+  <script src="./javascript/ui.js" type="text/javascript"></script>
+  <script src="./javascript/actions.js" type="text/javascript"></script>
+</body>
+</html>

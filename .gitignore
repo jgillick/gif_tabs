@@ -1,0 +1,12 @@
+# Build directory
+build
+
+# Keys
+*.pem
+
+# Dependency directories
+node_modules
+
+# Optional npm cache directory
+.npm
+
