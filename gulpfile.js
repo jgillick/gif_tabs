@@ -23,17 +23,19 @@ const STATIC_GLOB = [
 /**
  * Run the program
  */
-gulp.task('default', ['build', 'js:watch', 'watch']);
+gulp.task('default', ['build:watch']);
 
 /**
- * Build the files
+ * Build steps
  */
-gulp.task('build', ['static', 'sass']);
+gulp.task('build', ['static', 'sass', 'js']);
+gulp.task('build:watch', ['static', 'sass', 'watch']);
 
 /**
  * Update files when then change
  */
 gulp.task('watch', () => {
+  gulp.run('js:watch');
   gulp.watch(STATIC_GLOB, ['static']);
   gulp.watch(`${SRC}/**/*.scss`, ['sass']);
 });
@@ -72,10 +74,10 @@ gulp.task('js', webpack);
 gulp.task('js:watch', (cb) => webpack(cb, true));
 function webpack(cb, watch=false) {
   const cmd = path.join(__dirname, './node_modules/.bin/', 'webpack');
-  const params = [
-    '--color',
-    (watch) ? '--watch' : null
-  ];
+  const params = ['--color'];
+  if (watch) {
+    params.push('--watch');
+  }
 
   // Spawn process
   const webpackProcess = spawn(cmd, params, { cwd: __dirname });
@@ -113,8 +115,7 @@ function webpack(cb, watch=false) {
 /**
  * Create chrome extension
  */
-gulp.task('dist', ['build', 'js'], extensionTask);
-function extensionTask(cb) {
+gulp.task('dist', ['build'], (cb) => {
   const updateFile = 'update.xml';
   const extFile =  'gif_tabs.crx';
   const codebase = 'https://github.com/jgillick/gif_tabs/dist/'+ extFile;
@@ -131,4 +132,4 @@ function extensionTask(cb) {
     fs.writeFile(path.join(DIST, updateFile), updateXML);
     fs.writeFile(path.join(DIST, extFile), crxBuffer, cb);
   });
-}
+});
