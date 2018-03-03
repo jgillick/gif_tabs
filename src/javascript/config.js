@@ -1,65 +1,64 @@
 
+import messenger from './messenger';
+
 /**
   Handles the app's central storage
 */
-(function(){
+const Config = {
+  settings: {},
+  lastFeedUpdate: 0,
 
 
-  window.Config = {
-    settings: {},
-    lastFeedUpdate: 0,
+  /**
+    Load the storage into variables
 
-
-    /**
-      Load the storage into variables
-
-      @param {String or Array} properties (optional) List of property names to update
-      @returns Promise
-    */
-    load: function(properties){
-      var dfd = new jQuery.Deferred();
-
-      chrome.storage.local.get(properties, (function(items){
+    @param {String or Array} properties (optional) List of property names to update
+    @returns Promise
+  */
+  load: function(properties){
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.get(properties, (items) => {
         this.settings          = items.settings || this.settings;
         this.lastFeedUpdate    = items.lastFeedUpdate || this.lastFeedUpdate;
 
         // Default settings
-        this.settings = _.defaults(this.settings || {}, {
+        const defaults = {
           theme: 'light_gray',
           giphy: true,
           reddit: true,
           replygif: true
-        });
+        };
+        this.settings = Object.assign({}, defaults, this.settings);
 
-        dfd.resolve();
-      }).bind(this));
+        resolve();
+      });
+    });
+  },
 
-      return dfd.promise();
-    },
+  /**
+    Update the storage and return a promise
 
-    /**
-      Update the storage and return a promise
+    @param {String} property The property name to save
+    @returns Promise
+  */
+  save: function(property) {
+    var store = {}, singleStore;
 
-      @param {String} property The property name to save
-      @returns Promise
-    */
-    save: function(property) {
-      var store = {}, singleStore,
-          dfd = new jQuery.Deferred();
+    // Setup store
+    store = {
+      version: chrome.app.getDetails().version,
+      settings: this.settings,
+      lastFeedUpdate: this.lastFeedUpdate,
+    };
 
-      // Setup store
-      store = {
-        version:           chrome.app.getDetails().version,
-        settings:          this.settings,
-        lastFeedUpdate:    this.lastFeedUpdate,
-      }
+    return new Promise((resolve, reject) => {
 
       // Only save one property
       if (typeof property == 'string') {
 
-        if (typeof store[property] == undefined) {
-          dfd.reject();
-          return dfd.promise();
+        if (typeof store[property] === 'undefined') {
+          reject();
+          return;
         }
 
         singleStore = {};
@@ -71,47 +70,47 @@
 
       // Save to chrome storage
       chrome.storage.local.set(store, function(){
-        dfd.resolve();
+        resolve();
 
         // Send event trigger for all updated properties
         for (var name in store) if (store.hasOwnProperty(name)) {
-          Messenger.send(name +'-updated', store[name]);
+          messenger.send(name +'-updated', store[name]);
         }
-        Messenger.send('config-updated', property);
+        messenger.send('config-updated', property);
       });
+    });
+  },
 
-      return dfd.promise();
-    },
+  /**
+    Set and save a value on the Config object
 
-    /**
-      Set and save a value on the Config object
+    @param {String} name The config name
+    @param {String} value The config value
+    @returns Promise
+  */
+  set: function(name, value) {
+    var scope = this,
+        scopeName = name,
+        pathMatch = name.match(/^([^\.]+)\.(.+)$/);
 
-      @param {String} name The config name
-      @param {String} value The config value
-      @returns Promise
-    */
-    set: function(name, value) {
-      var scope = this,
-          scopeName = name,
-          pathMatch;
+    if (pathMatch) {
+      scopeName = pathMatch[1];
+      name = pathMatch[2];
+      scope = this[scopeName];
 
-      if (pathMatch = name.match(/^([^\.]+)\.(.+)$/)) {
-        scopeName = pathMatch[1];
-        name = pathMatch[2];
-        scope = this[scopeName];
-
-        if (!scope) {
-          throw "Invalid Config scope, "+ scopeName;
-        }
+      if (!scope) {
+        throw "Invalid Config scope, "+ scopeName;
       }
-
-      scope[name] = value;
-      return this.save(scopeName);
     }
-  }
 
-  // Update store when another window updates
-  Messenger.addListener('config-updated', function(property){
-    Config.load(property);
-  });
-})();
+    scope[name] = value;
+    return this.save(scopeName);
+  }
+};
+
+// Update store when another window updates
+messenger.addListener('config-updated', function(property){
+  Config.load(property);
+});
+
+export default Config;

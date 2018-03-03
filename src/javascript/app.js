@@ -1,13 +1,19 @@
 
-var UI_NEXT = 1,
-    UI_PREV = -1;
+import initBrowserActions from './actions';
+import messenger from './messenger';
+import Config from './config';
+import Gifs from './gifs';
+
+import $ from 'jquery';
+
+const UI_NEXT = 1;
+const UI_PREV = -1;
 
 
 /**
   Setup and manage the UI of the page
 */
 (function() {
-  var historyIndex = -1;
 
   window.UI = {
     currentGif: null,
@@ -19,53 +25,52 @@ var UI_NEXT = 1,
     init: function() {
 
       // Load from storage, then build page
-      Config.load().then((function(){
-        Gifs.init().then((function(){
-          Gifs.getGifs().then((function(gifs){
-            var id;
+      Config.load()
+      .then(() => Gifs.init())
+      .then(() => Gifs.getGifs())
+      .then((gifs) => {
+        let id;
 
-            this.updateSettings();
-            this.setTheme(Config.settings.theme);
+        this.updateSettings();
+        this.setTheme(Config.settings.theme);
 
-            // Attempt to find an ID in the URL
-            if (document.location.hash.length > 1) {
-              id = document.location.hash.substr(5); // #gif=123
-            }
-            // In the hidden form field
-            else if ($("#gifid").val() != '') {
-              id = $("#gifid").val();
-            }
+        // Attempt to find an ID in the URL
+        if (document.location.hash.length > 1) {
+          id = document.location.hash.substr(5); // #gif=123
+        }
+        // In the hidden form field
+        else if ($("#gifid").val() !== '') {
+          id = $("#gifid").val();
+        }
 
-            // No gifs
-            if (gifs.length == 0) {
-              Gifs.loadNewGifs().then(this.showRandomGif.bind(this));
-            }
+        // No gifs
+        if (gifs.length === 0) {
+          Gifs.loadNewGifs().then(this.showRandomGif.bind(this));
+        }
 
-            // Attempt to load existing gif (from location hash)
-            else if (id) {
-              Gifs.getByID(id)
-              .then((function(gif){
-                this.showGif(gif);
-                this.buildHistory();
-                Gifs.loadNewGifs();
-              }).bind(this))
-              .fail((function(){
-                this.showRandomGif();
-              }).bind(this));
-            }
-
-            // Show random gif
-            else {
-              this.showRandomGif();
-              Gifs.loadNewGifs();
-            }
-
+        // Attempt to load existing gif (from location hash)
+        else if (id) {
+          Gifs.getByID(id)
+          .then((function(gif){
+            this.showGif(gif);
+            this.buildHistory();
             Gifs.loadNewGifs();
-            this.buildFavorites();
-            Gifs.syncFavorites().then(this.buildFavorites.bind(this));
+          }).bind(this))
+          .catch((function(){
+            this.showRandomGif();
           }).bind(this));
-        }).bind(this));
-      }).bind(this));
+        }
+
+        // Show random gif
+        else {
+          this.showRandomGif();
+          Gifs.loadNewGifs();
+        }
+
+        Gifs.loadNewGifs();
+        this.buildFavorites();
+        Gifs.syncFavorites().then(this.buildFavorites.bind(this));
+      });
     },
 
     /**
@@ -74,6 +79,7 @@ var UI_NEXT = 1,
     updateSettings: function() {
       $('#theme-select').val(Config.settings.theme);
       $('#setting-giphy').attr('checked', Config.settings.giphy);
+      $('#setting-imgur').attr('checked', Config.settings.imgur);
       $('#setting-reddit').attr('checked', Config.settings.reddit);
       $('#setting-replygif').attr('checked', Config.settings.replygif);
     },
@@ -96,10 +102,10 @@ var UI_NEXT = 1,
       Select a gif at random and display it
     */
     showRandomGif: function() {
-      Gifs.random().then((function(gif){
+      Gifs.random().then((gif) => {
         Gifs.addToHistory(gif);
         this.showGif(gif);
-      }).bind(this));
+      });
     },
 
     /**
@@ -428,13 +434,16 @@ var UI_NEXT = 1,
   }
 
   // State Listeners
-  Messenger.addListener('history-updated', function(){
+  messenger.addListener('history-updated', function(){
     UI.buildHistory();
   });
-  Messenger.addListener('favorites-updated', function(){
+  messenger.addListener('favorites-updated', function(){
     UI.buildFavorites();
     UI.isFavorite();
   });
+
+  // Browser actions
+  initBrowserActions();
 })();
 
 UI.init();

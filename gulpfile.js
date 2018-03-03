@@ -7,15 +7,15 @@ const notify = require("gulp-notify");
 const sass = require('gulp-sass');
 const del = require('del');
 const ChromeExtension = require("crx");
-const babel = require("gulp-babel");
-const sourcemaps = require("gulp-sourcemaps");
+const spawn = require('child_process').spawn;
 
-const SRC = './src/';
-const DIST = './dist/';
-const BUILD = './build/';
+const SRC = './src';
+const DIST = './dist';
+const BUILD = './build';
 const CRX_KEY = 'gif_tabs.pem';
 const STATIC_GLOB = [
-  `${SRC}/**/*`,
+  `${SRC}/**/*.*`,
+  `!${SRC}/**/*.psd`,
   `!${SRC}/**/*.js`,
   `!${SRC}/**/*.scss`,
 ];
@@ -23,46 +23,38 @@ const STATIC_GLOB = [
 /**
  * Run the program
  */
-gulp.task('default', ['build', 'watch']);
+gulp.task('default', ['build', 'js:watch', 'watch']);
 
 /**
  * Build the files
  */
-gulp.task('build', ['static', 'js', 'sass']);
+gulp.task('build', ['static', 'sass']);
 
 /**
  * Update files when then change
  */
 gulp.task('watch', () => {
-  gulp.watch(STATIC_GLOB, ['static:watch']);
-  gulp.watch(`${SRC}/**/*.scss`, ['sass:watch']);
-  gulp.watch(`${SRC}/**/*`, jsTask);
-  gulp.watch([
-    `${BUILD}/**/*`,
-  ], ['dist:watch']);
+  gulp.watch(STATIC_GLOB, ['static']);
+  gulp.watch(`${SRC}/**/*.scss`, ['sass']);
 });
 
-gulp.task('clean', (cb) => {
+gulp.task('clean', () => {
   return del(BUILD +'/*');
 });
 
 /**
  * Copy static files over
  */
-gulp.task('static', [], staticTask);
-gulp.task('static:watch', staticTask);
-function staticTask(){
+gulp.task('static', [], () => {
   return gulp
     .src(STATIC_GLOB, { base: SRC })
     .pipe(gulp.dest(BUILD));
-}
+});
 
 /**
  * Process SCSS files
  */
-gulp.task('sass', [], sassTask);
-gulp.task('sass:watch', sassTask);
-function sassTask() {
+gulp.task('sass', () => {
   return gulp
     .src(`${SRC}/**/*.scss`)
     .pipe(sass().on('error', sass.logError))
@@ -71,29 +63,57 @@ function sassTask() {
       title: "Error building SASS",
       message: "<%= error.message %>"
     }));
-}
+});
 
 /**
- * Process JS files through babel
+ * Process JS files through webpack
  */
-gulp.task('js', [], jsTask);
-gulp.task('js:watch', jsTask);
-function jsTask() {
-  return gulp
-    .src(`${SRC}/**/*.js`)
-    .pipe(sourcemaps.init())
-    .pipe(babel({
-        presets: ['env']
-    }))
-    .pipe(sourcemaps.write("."))
-    .pipe(gulp.dest(BUILD));
+gulp.task('js', webpack);
+gulp.task('js:watch', (cb) => webpack(cb, true));
+function webpack(cb, watch=false) {
+  const cmd = path.join(__dirname, './node_modules/.bin/', 'webpack');
+  const params = [
+    '--color',
+    (watch) ? '--watch' : null
+  ];
+
+  // Spawn process
+  const webpackProcess = spawn(cmd, params, { cwd: __dirname });
+
+  // Callback can only be called once.
+  // Make it a no-op when it's been called.
+  function callback(){
+    cb();
+    callback = ()=>{};
+  }
+
+  // Respond to stream events
+  webpackProcess.stdout.on('data', (data) => {
+    data = data.toString();
+    console.log(data);
+
+    // Initial pass of packing done when it outputs time
+    if (watch && data.includes('Time:')) {
+      callback();
+    }
+  });
+  webpackProcess.stderr.on('data', (data) => {
+    const err = data.toString();
+    console.log(err);
+    notify.onError({
+      title: "Error building JS",
+      message: "<%= err.message %>"
+    });
+  });
+  webpackProcess.on('close', () => {
+    callback();
+  });
 }
 
 /**
  * Create chrome extension
  */
-gulp.task('dist', ['build'], extensionTask);
-gulp.task('dist:watch', [], extensionTask);
+gulp.task('dist', ['build', 'js'], extensionTask);
 function extensionTask(cb) {
   const updateFile = 'update.xml';
   const extFile =  'gif_tabs.crx';
@@ -104,12 +124,11 @@ function extensionTask(cb) {
     privateKey: fs.readFileSync(CRX_KEY)
   });
 
-  crx.load( path.resolve(BUILD) )
-    .then(crx => crx.pack())
-    .then((crxBuffer) => {
-      const updateXML = crx.generateUpdateXML()
-
-      fs.writeFile(DIST + updateFile, updateXML);
-      fs.writeFile(DIST + extFile, crxBuffer, cb);
-    });
+  crx.load(path.resolve(BUILD))
+  .then(crx => crx.pack())
+  .then((crxBuffer) => {
+    const updateXML = crx.generateUpdateXML();
+    fs.writeFile(path.join(DIST, updateFile), updateXML);
+    fs.writeFile(path.join(DIST, extFile), crxBuffer, cb);
+  });
 }

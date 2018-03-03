@@ -24,63 +24,66 @@ figcaption {
   min-height: 20px;
   padding: 10px;
   opacity: .8;
-}
-.settings h1 {
-  position: absolute;
-  top: 0;
-  left: 10px;
-  height: 20px;
-  width: 20px;
-  background: url(/images/gear.png) center center;
-  background-size: contain;
-  text-indent: -1234em;
-  opacity: .1;
-}
-.settings:hover {
-  padding-top: 40px;
-  background: #dedede;
-}
-.settings:hover h1 {
-  opacity: .3;
-}
-.settings:hover ol {
-  display: block;
-}
-.settings ol {
-  display: none;
-  list-style-type: none;
-  margin: 10px 5px;
-  padding: 0;
-}
-.settings ol li {
-  margin: 5px 0;
-  padding: 0;
-}
 
-.settings ol li.reload {
-  text-align: center;
-  margin: 15px 0 0;
-}
-.settings ol li.reload button {
-  appearance: normal;
+  h1 {
+    position: absolute;
+    top: 0;
+    left: 10px;
+    height: 20px;
+    width: 20px;
+    background: url(/images/gear.png) center center;
+    background-size: contain;
+    text-indent: -1234em;
+    opacity: .1;
+  }
+  &:hover {
+    padding-top: 40px;
+    background: #dedede;
+    h1 {
+      opacity: .3;
+    }
+    ol {
+      display: block;
+    }
+  }
 
-  opacity: .5;
-  padding: 5px 7px 5px 20px;
-  min-height: 16px;
-  border: none;
-  outline: none;
-  border-radius: 3px;
-  background: transparent url(/images/reload.png) no-repeat center left;
-  background-size: 16px 16px;
-  cursor: pointer;
-  transition: opacity .3s, background-color .3s, color .3s;
-}
-.settings ol li.reload button:hover {
-  opacity: 1;
-}
-.settings ol li.reload button:active {
-  color: #ddd;
-  background-color: #7E7E7E;
+  ol {
+    display: none;
+    list-style-type: none;
+    margin: 10px 5px;
+    padding: 0;
+  }
+  ol li {
+    margin: 5px 0;
+    padding: 0;
+  }
+
+  ol li.reload {
+    text-align: center;
+    margin: 15px 0 0;
+
+    button {
+      appearance: normal;
+
+      opacity: .5;
+      padding: 5px 7px 5px 20px;
+      min-height: 16px;
+      border: none;
+      outline: none;
+      border-radius: 3px;
+      background: transparent url(/images/reload.png) no-repeat center left;
+      background-size: 16px 16px;
+      cursor: pointer;
+      transition: opacity .3s, background-color .3s, color .3s;
+      &:hover {
+        opacity: 1;
+      }
+      &:active {
+        color: #ddd;
+        background-color: #7E7E7E;
+      }
+    }
+  }
 }
 
 /**
@@ -141,6 +144,10 @@ body.history-last nav .arrow.left {
 .main .actions .make-favorite.clicked:before,
 .main.favorite .actions .make-favorite.clicked:before {
   display: none;
+}
+
+#embed-html video {
+  max-height: 65vh;
 }
 
 /*
