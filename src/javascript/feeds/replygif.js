@@ -56,7 +56,7 @@ export default {
         // Save gifs to storage
         if (gifs.length) {
           console.info('Loaded', gifs.length, 'from', this.name);
-          Gifs.addGifs(gifs).then(function(){
+          Gifs.addGifs(gifs).then(() => {
             resolve(gifs);
           });
         }
@@ -72,8 +72,7 @@ export default {
   */
   get: function(id){
     var gifs = [],
-        rPrefix = new RegExp('^'+ this.prefix +'\-'),
-        dfd = new jQuery.Deferred();
+        rPrefix = new RegExp('^'+ this.prefix +'\-');
 
     // Remove prefix
     id = (!Array.isArray(id)) ? [id] : id;

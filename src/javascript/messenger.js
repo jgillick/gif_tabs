@@ -34,10 +34,14 @@ class Messenger {
     @param {Object} data Data to send with this event
   */
   send(name, data) {
-    var port = chrome.extension.connect({name: 'gif-tabs-messenger'}),
-        msg = {'name': name, 'data': data};
-    port.postMessage(msg);
-    radio(name).broadcast(data);
+    try {
+      const port = chrome.extension.connect({name: 'gif-tabs-messenger'});
+      port.postMessage({
+        name,
+        data
+      });
+      radio(name).broadcast(data);
+    } catch(e) { console.log('Send err', e); }
   }
 }
 export default new Messenger();

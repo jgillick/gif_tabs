@@ -62,8 +62,7 @@ export default {
     @return Promise
   */
   get: function(id) {
-    let resolved = 0,
-        groups = {},
+    let groups = {},
         groupCount = 0,
         allGifs = [];
 
@@ -71,7 +70,7 @@ export default {
     id = id.sort();
 
     // Group the IDs into feeds
-    id.forEach(function(id){
+    id.forEach((id) => {
       var prefix = id.split('-', 1)[0];
 
       if (!prefix || !this.handlers[prefix]) {
@@ -87,31 +86,22 @@ export default {
     });
 
     // Load images for each group
-    return new Promise((resolve) => {
-      Object.keys(groups).forEach((prefix) => {
-        const group = groups[prefix];
+    const promises = Object.keys(groups).map((prefix) => {
+      const group = groups[prefix];
 
-        // Append to gif list
-        this.handlers[prefix].get(group)
-        .then(function(gifs){
-          if (gifs) {
-            allGifs = allGifs.concat(gifs);
-            resolved++;
-          }
-        })
-        // Whoops
-        .catch(function(e){
-          console.error(e);
-          resolved++;
-        })
-        // All feeds have finsihed, resolve promise
-        .finally(function(){
-          if (resolved == groupCount) {
-            resolve(allGifs);
-          }
-        });
+      return this.handlers[prefix]
+      .get(group)
+      .then((gifs) => {
+        allGifs = allGifs.concat(gifs);
+        return gifs;
+      })
+      .catch((e) => {
+        return [];
       });
+
     });
+
+    return Promise.all(promises).then(() => allGifs);
   }
 };
 
