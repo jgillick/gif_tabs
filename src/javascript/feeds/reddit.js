@@ -22,7 +22,7 @@ export default {
         gif   = {};
 
     // Skip
-    if (data.over_18 || data.thumbnail == 'nsfw' || (type != 'gif' && type != 'gifv')) {
+    if (data.over_18 || data.thumbnail === 'nsfw') {
       return false;
     }
 
@@ -36,6 +36,34 @@ export default {
       title: data.title,
       description: null
     };
+
+    // Embeddable
+    if (type !== 'gif') {
+      let video;
+
+      // Reddit video
+      if (data.media && data.media.reddit_video) {
+        video = data.media.reddit_video;
+      } else if (data.preview && data.preview.reddit_video_preview) {
+        video = data.preview.reddit_video_preview;
+      }
+      if (video) {
+        gif.embed = `
+          <video autoplay loop>
+            <source src="${video.dash_url}" />
+            <source src="${video.fallback_url}" />
+          </video>`;
+      }
+      else if (data.oembed && data.oembed.html) {
+        gif.embed = data.oembed.html
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>');
+      }
+      else {
+        // No media to show
+        return;
+      }
+    }
 
     // Static thumbnail
     try {
