@@ -19,7 +19,7 @@ export default {
     @param {Object} data Any query params to send to the endpoint
   */
   ajax: function(endpoint, data) {
-    return $.ajax('https://api.imgur.com/3'+ endpoint, {
+    return $.ajax(`https://api.imgur.com/3/${endpoint}`, {
       type: 'GET',
       data: data,
       headers: {
@@ -76,7 +76,7 @@ export default {
       const loadPages = (p) => {
         p = p || 0;
 
-        this.ajax('/gallery/r/gifs/top/week', { page: p })
+        this.ajax(`/gallery/hot/viral/${p}.json`)
         .then((xhr) => {
           var data = xhr.data;
 
@@ -113,8 +113,7 @@ export default {
     @return Promise
   */
   get: function(id){
-    var gifs = [],
-        responses = 0,
+    let gifs = [],
         rPrefix = new RegExp('^'+ this.prefix +'\-');
 
     // Remove prefix
@@ -122,25 +121,24 @@ export default {
     let gids = id.map((i) => i.replace(rPrefix, ''));
 
     // Get all images by ID
-    return new Promise((resolve) => {
-      gids.forEach((id) => {
-
-        this.ajax('/image/'+ id)
+    const promises = gids.map((id) => {
+      return new Promise((resolve) => {
+        this.ajax(`/image/${id}`)
         .then((xhr) => {
           // Process gif
           var gif = this.normalizeGif(xhr.data);
           if (gif) gifs.push(gif);
+          resolve(gif);
         })
         .fail(() => {
-        // Resolve promise, if all gifs have returned
-          responses++;
-          if (responses == gids.length) {
-            console.info('GET', gifs.length, 'from', this.name);
-            resolve(gifs);
-          }
+          resolve(null);
         });
-
       });
+    });
+
+    return Promise.all(promises).then(() => {
+      console.info('GET', gifs.length, 'from', this.name);
+      return gifs;
     });
   }
 };
