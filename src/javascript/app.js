@@ -135,10 +135,14 @@ const UI_PREV = -1;
         href: gif.url
       });
 
+      // Embed gifv's
+      if(!gif.embed && gif.url.match(/\.gifv$/i)) {
+        gif.embed = `<video src="${gif.url}" autoplay loop></video>`;
+      }
+
       // Embedded HTML
       console.log(gif);
       if (gif.embed && gif.embed.length) {
-        console.log('Embedded', gif.id);
         embedHTML.html(gif.embed);
         embedHTML.show();
         imgEl.hide();
