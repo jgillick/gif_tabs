@@ -3,8 +3,6 @@
 import Feeds from './feedLoader';
 import Config from './config';
 import messenger from './messenger';
-import jQuery from "jquery";
-import _ from 'underscore';
 
 var db = null;
 
@@ -69,16 +67,21 @@ const Gifs = {
   getByID: function(id) {
     return new Promise((resolve, reject) => {
       const trans = db.transaction(['gifs'], 'readonly');
-      trans.onerror = function(e) {
+      trans.onerror = (e) => {
         reject(e.value);
       };
 
       const req = trans.objectStore('gifs').get(id);
-      req.onerror = function(e) {
+      req.onerror = (e) => {
         reject(e.value);
       };
-      req.onsuccess = function(e) {
-        resolve(req.result);
+      req.onsuccess = () => {
+        const gif = req.result;
+        if (gif) {
+          resolve(gif);
+        } else {
+          reject();
+        }
       };
     });
   },
@@ -102,11 +105,7 @@ const Gifs = {
         let gif;
 
         // Filter out feeds disabled in settings
-        console.log('Settings', Config.settings);
-        console.log(gifs);
-        console.log('Before', gifs.length);
         const filteredGifs = gifs.filter((g) => (Config.settings[g.feed] !== false));
-        console.log('After', filteredGifs.length);
 
         // Loop until we find a good random one
         let tries = 0;
@@ -140,16 +139,16 @@ const Gifs = {
   */
   loadNewGifs: function(forceUpdate) {
     const now = Date.now();
+    const sinceUpdate = now - Config.lastFeedUpdate;
+    const UPDATE_SECS = 60 * 60 * 6 * 1000; // 6 hours
 
     return this.gifCount()
     .then((gifLen) => {
       console.info('All gifs', gifLen);
 
-      // Don't load new gifs unless it's been 12 hours
+      // Don't load new gifs unless it's been 6 hours
       // or we've gone through at least 1/4 of the existing pool
-      if (forceUpdate !== true
-          && gifLen > MAX_HISTORY_STORED
-          && now - Config.lastFeedUpdate < (60 * 60 * 6 * 1000)) {
+      if (forceUpdate !== true && gifLen > MAX_HISTORY_STORED && sinceUpdate < UPDATE_SECS) {
         return [];
       }
 
@@ -167,35 +166,37 @@ const Gifs = {
     @return Promise
   */
   addGifs: function(gifs) {
-    var trans = transaction();
+    const trans = transaction();
 
     // No gifs
-    if (!gifs || gifs.length == 0) {
-      trans.deferred.resolve([]);
+    if (!gifs || gifs.length === 0) {
+      trans.resolve([]);
+      return trans.promise;
     }
 
     // Add all gifs
-    gifs.forEach(function(gif){
+    gifs.forEach((gif) => {
       try {
         gif.addedOn = Date.now();
         gif.history = 0;
         gif.favorited = gif.favorited || 0;
-        trans.store.add(gif).onerror = function(e) {
+        trans.store.add(gif).onerror = (e) => {
           e.preventDefault();
-        }
+        };
       } catch(e) {
         console.error(e.message);
       }
     });
 
     // Get updated list
-    trans.deferred.promise().then((function(gifs){
+    trans.promise
+    .then(() => {
       if (gifs && gifs.length) {
         messenger.send('gifs-updated');
       }
-    }).bind(this));
+    });
 
-    return trans.deferred.promise();
+    return trans.promise;
   },
 
   /**
@@ -205,28 +206,27 @@ const Gifs = {
     @return Promise
   */
   removeGifsByFeed: function(feed) {
-    var dfd = new jQuery.Deferred();
+    return new Promise((resolve) => {
+      getAll('feed, favorite, history', IDBKeyRange.only(feed, 0, 0))
+      .then((gifs) => {
+        const trans = transaction();
 
-    getAll('feed, favorite, history', IDBKeyRange.only(feed, 0, 0)).then((function(gifs){
-      var trans = transaction()
+        // Delete gifs
+        gifs.forEach((gif) => {
+          trans.store.delete(gif.id);
+        });
 
-      // Delete gifs
-      gifs.forEach((function(gif){
-        trans.store.delete(gif.id);
-      }).bind(this));
-
-      // Notify everything
-      if (gifs.length > 0) {
-        trans.deferred.promise().then((function(){
-          messenger.send('gifs-updated');
-          dfd.resolve();
-        }).bind(this));
-      } else {
-        dfd.resolve();
-      }
-    }).bind(this));
-
-    return dfd.promise();
+        // Notify everything
+        if (gifs.length > 0) {
+          trans.promise.then(() => {
+            messenger.send('gifs-updated');
+            resolve();
+          });
+        } else {
+          resolve();
+        }
+      });
+    });
   },
 
   /**
@@ -244,14 +244,14 @@ const Gifs = {
         cursor.continue();
       }
       else {
-        trans.deferred.resolve();
+        trans.resolve();
       }
     };
     cursor.onerror = function(e) {
-      trans.deferred.reject(e.value)
+      trans.reject(e.value);
     };
 
-    return trans.deferred.promise();
+    return trans.promise;
   },
 
   /**
@@ -260,31 +260,31 @@ const Gifs = {
     @returns Promise
   */
   getHistory: function(){
-    var dfd = new jQuery.Deferred();
+    return new Promise((resolve) => {
 
-    // Update local cache and truncate to max history length
-    getAll('history', IDBKeyRange.lowerBound(1)).then((function(gifs){
-      var extra = gifs.slice(MAX_HISTORY_STORED),
-          history = gifs.slice(0, MAX_HISTORY_STORED),
-          removeTrans = transaction();
+      // Update local cache and truncate to max history length
+      getAll('history', IDBKeyRange.lowerBound(1))
+      .then((gifs) => {
+        const extra = gifs.slice(MAX_HISTORY_STORED);
+        const history = gifs.slice(0, MAX_HISTORY_STORED);
+        const removeTrans = transaction();
 
-      // Remove everything over the max history length
-      if (extra.length) {
-        extra.forEach(function(gif){
-          gif.history = 0;
-          removeTrans.store.put(gif);
-        });
+        // Remove everything over the max history length
+        if (extra.length) {
+          extra.forEach(function(gif){
+            gif.history = 0;
+            removeTrans.store.put(gif);
+          });
 
-        removeTrans.deferred.promise().then((function(){
-          dfd.resolve(history);
-        }).bind(this));
-      } else {
-        dfd.resolve(history);
-      }
+          removeTrans.promise.then(() => {
+            resolve(history);
+          });
+        } else {
+          resolve(history);
+        }
 
-    }).bind(this));
-
-    return dfd.promise();
+      });
+    });
   },
 
   /**
@@ -293,7 +293,7 @@ const Gifs = {
     @param {Object} gif The gif to add to the history list
   */
   addToHistory: function(gif) {
-    var req = changeGifProperty(gif, 'history', Date.now());
+    const req = changeGifProperty(gif, 'history', Date.now());
     req.then(function(){
       messenger.send('history-updated');
     });
@@ -329,23 +329,25 @@ const Gifs = {
     });
 
     // Sync with cloud
-    chrome.storage.sync.get('favorites', function(data){
-      data.favorites = data.favorites || {};
+    return new Promise((resolve, reject) => {
+      chrome.storage.sync.get('favorites', (data) => {
+        data.favorites = data.favorites || {};
 
-      if (!data.favorites[gif.id]) {
-        data.favorites[gif.id] = now;
+        if (!data.favorites[gif.id]) {
+          data.favorites[gif.id] = now;
 
-        chrome.storage.sync.set(data, function(){
-          if (chrome.runtime.lastError) {
-            console.error('Error trying to sync the favorites: ', runtime.lastError);
-          } else {
-            console.info('Favorites synced');
-          }
-        });
-      }
+          chrome.storage.sync.set(data, () => {
+            if (chrome.runtime.lastError) {
+              console.error('Error trying to sync the favorites: ', runtime.lastError);
+              reject(runtime.lastError);
+            } else {
+              console.info('Added to favorites!', gif);
+              resolve();
+            }
+          });
+        }
+      });
     });
-
-    return req;
   },
 
   /**
@@ -391,67 +393,74 @@ const Gifs = {
     (assume the cloud has the correct list)
   */
   syncFavorites: function(){
-    var dfd = new jQuery.Deferred();
+    return new Promise((resolve) => {
 
-    // Get favorites from the cloud
-    chrome.storage.sync.get('favorites', (function(data){
-      var cloudFavs = data.favorites || {};
+      // Get favorites from the cloud
+      chrome.storage.sync.get('favorites', (data) => {
+        let cloudFavs = data.favorites || {};
 
-      // Get favorites from the DB
-      this.getFavorites().then((function(localFavs){
-        var queue = [];
+        // Get favorites from the DB
+        this.getFavorites()
+        .then((localFavs) => {
+          let queue = [];
 
-        // Prune favs not in clouse
-        localFavs.forEach((function(fav){
-          if (!cloudFavs[fav.id]) {
-            console.info('Remove', fav.id);
-            changeGifProperty(fav, 'favorited', 0)
-          }
-        }).bind(this));
-
-        // Add new favs
-        _.each(cloudFavs, (function(timestamp, id){
-          var found = null;
-
-          localFavs.every(function(f){
-            if (f.id == id) {
-              found = f;
-              return false;
+          // Prune favs not in cloud
+          localFavs.forEach((fav) => {
+            if (!cloudFavs[fav.id]) {
+              changeGifProperty(fav, 'favorited', 0);
             }
-            return true;
           });
 
-          // Add to favs
-          if (found) {
-            if (found.favorited == 0) {
-              changeGifProperty(found, 'favorited', timestamp);
+          // Add new favs
+          Object.keys(cloudFavs).forEach((id) => {
+            const timestamp = cloudFavs[id];
+
+            let found = localFavs.filter((f) => (f.id === id));
+
+            // Add to favs
+            if (found.length) {
+              found = found[0];
+              if (found.favorited === 0) {
+                changeGifProperty(found, 'favorited', timestamp);
+              }
             }
+            // Queue up to load from the feed
+            else {
+              queue.push(id);
+            }
+
+          });
+
+          // Check if images are already in DB
+          let findPromises = [];
+          if (queue.length) {
+            findPromises = queue.map((id) => {
+              return this.getByID(id)
+              .then((gif) => {
+                queue = queue.filter(i => i !== id);
+                this.addToFavorites(gif);
+              })
+              .catch(() => null); // skip errors
+            });
           }
-          // Queue up to load from the feed
-          else {
-            queue.push(id);
-          }
 
-        }).bind(this));
-
-        // Load images from the feeds
-        if (queue.length) {
-          Feeds.get(queue).then((function(gifs){
-
-            // Add timestamps then add to DB
-            gifs.forEach((function(gif){
-              gif.favorited = localFavs[gif.id] || 0;
-            }).bind(this));
-
-            this.addGifs(gifs).then(dfd.resolve);
-          }).bind(this));
-        } else {
-          dfd.resolve();
-        }
-      }).bind(this));
-    }).bind(this));
-
-    return dfd.promise();
+          // Load any additional images from the feeds.
+          Promise.all(findPromises)
+          .then(() => {
+            if (queue.length) {
+              Feeds.get(queue)
+              .then((gifs) => {
+                gifs.forEach((gif) => {
+                  gif.favorited = cloudFavs[gif.id] || 1;
+                });
+                this.addGifs(gifs).then(resolve);
+              });
+            }
+            resolve();
+          });
+        });
+      });
+    });
   }
 };
 export default Gifs;
@@ -470,7 +479,7 @@ function migrations(event){
 
   if (oldVersion < 1) {
     // Create gifs stores
-    var store = db.createObjectStore('gifs', {keyPath: "id"});
+    const store = db.createObjectStore('gifs', {keyPath: 'id'});
     store.createIndex('feed',      'feed',      {unique: false});
     store.createIndex('favorited', 'favorited', {unique: false});
     store.createIndex('history',   'history',   {unique: false});
@@ -482,36 +491,45 @@ function migrations(event){
 
     // Settings & config store
     db.createObjectStore('config', {keyPath: "name"})
-      .createIndex("timestamp", "timestamp", { unique: false });
+    .createIndex("timestamp", "timestamp", { unique: false });
   }
 }
 
 /**
   Create a transaction for a store and setup a
-  deferred promise to handle the success and error states
+  promise to handle the success and error states
 
   @param {String} mode (optional) The transaction mode (readwrite or readonly)
-  @returns {Object} with deferred, transaction and store
+  @returns {Object} with promise, resolve, reject, transaction and store
 */
-function transaction(mode) {
-  var dfd = new jQuery.Deferred(),
-      mode = mode || "readwrite",
-      trans = db.transaction(['gifs'], mode),
-      store = trans.objectStore('gifs');
+function transaction(mode='readwrite') {
+  const trans = db.transaction(['gifs'], mode);
+  const store = trans.objectStore('gifs');
 
-  trans.oncomplete = function(e) {
-    dfd.resolve();
-  };
-  trans.onerror = function(e) {
-    dfd.reject(e.value)
-  };
+  let promiseResolve, promiseReject;
+  const transPromise = new Promise((resolve, reject) => {
+    promiseResolve = resolve;
+    promiseReject = reject;
+    trans.oncomplete = () => {
+      resolve([]);
+    };
+    trans.onerror = (e) => {
+      let value = trans.error || e.value;
+      if (!value && e.target.error) {
+        value = e.target.error.message;
+      }
+      reject(value || 'Unknown error');
+    };
+  });
 
   return {
-    deferred: dfd,
+    promise: transPromise,
+    resolve: promiseResolve,
+    reject: promiseReject,
     transaction: trans,
     store: store
   };
-};
+}
 
 /**
   Get all gif objects which match an index and range
@@ -546,14 +564,14 @@ function getAll(indexName, range) {
       cursor.continue();
     }
     else {
-      trans.deferred.resolve(all);
+      trans.resolve(all);
     }
   };
   cursor.onerror = function(e) {
-    trans.deferred.reject(e.value)
+    trans.reject(e.value);
   };
 
-  return trans.deferred.promise();
+  return trans.promise;
 }
 
 /**
@@ -565,21 +583,20 @@ function getAll(indexName, range) {
   @return Promise
 */
 function changeGifProperty(gif, property, value) {
-  var dfd = new jQuery.Deferred();
+  return new Promise((resolve) => {
+    Gifs.getByID(gif.id)
+    .then((foundGif) => {
+      const trans = transaction();
 
-  Gifs.getByID(gif.id).then((function(foundGif){
-    var trans = transaction();
+      gif = foundGif || gif;
+      gif[property] = value;
 
-    gif = foundGif || gif;
-    gif[property] = value;
-
-    trans.store.put(gif);
-    trans.deferred.then(function(){
-      dfd.resolve(gif);
+      trans.store.put(gif);
+      trans.promise.then(() => {
+        resolve(gif);
+      });
     });
-  }).bind(this));
-
-  return dfd.promise();
+  });
 }
 
 
@@ -591,8 +608,7 @@ function changeGifProperty(gif, property, value) {
   @return Promise
 */
 function inList(list, id) {
-  var dfd = new jQuery.Deferred(),
-      trans = transaction('readonly'),
+  let trans = transaction('readonly'),
       index, range, request;
 
   if (list != 'history' && list != 'favorites') {
@@ -602,14 +618,14 @@ function inList(list, id) {
   index = trans.store.index("id, "+ list);
   range = IDBKeyRange.bound([id, 1], [id, Date.now()]);
 
-  request = index.get(range);
-  request.onsuccess = function(event) {
-    dfd.resolve(!!event.target.result);
-  }
-  request.onerror = function(event){
-    dfd.reject(event.value)
-  }
-
-  return dfd.promise();
+  return new Promise((resolve, reject) => {
+    request = index.get(range);
+    request.onsuccess = function(event) {
+      resolve(!!event.target.result);
+    }
+    request.onerror = function(event){
+      reject(event.value);
+    }
+  });
 }
 
