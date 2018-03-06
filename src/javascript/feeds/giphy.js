@@ -1,7 +1,6 @@
 import Gifs from '../gifs';
 
 import $ from 'jquery';
-import _ from 'underscore';
 
 const MAX_STORED = 200;
 
