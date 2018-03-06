@@ -433,6 +433,9 @@ const UI_PREV = -1;
       if (viewport >= $(document).height()) {
         body.addClass('fits-view');
       }
+
+      // Reflow
+      void(document.documentElement.offsetHeight);
     }
 
   }

@@ -80,21 +80,13 @@ export default function initBrowserActions() {
   });
 
   /**
-    If image fails to load, try another one
-  */
-  // $('.main img').error(function(){
-  //   if (errorCount < 5) {
-  //     UI.showRandomGif();
-  //     errorCount++;
-  //   }
-  // });
-
-  /**
     Loaded successfully
   */
-  $('a.image img').on('load', function(){
+  $('a.image img, a.image video').on('load', function(el){
     errorCount = 0;
-    setTimeout(UI.setWindowSizing, 50);
+    setTimeout(() => {
+      UI.setWindowSizing();
+    }, 100);
   });
 
   /**
