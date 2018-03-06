@@ -29,13 +29,12 @@ gulp.task('default', ['build:watch']);
  * Build steps
  */
 gulp.task('build', ['static', 'sass', 'js']);
-gulp.task('build:watch', ['static', 'sass', 'watch']);
+gulp.task('build:watch', ['static', 'sass', 'js:watch', 'watch']);
 
 /**
  * Update files when then change
  */
 gulp.task('watch', () => {
-  gulp.run('js:watch');
   gulp.watch(STATIC_GLOB, ['static']);
   gulp.watch(`${SRC}/**/*.scss`, ['sass']);
 });
