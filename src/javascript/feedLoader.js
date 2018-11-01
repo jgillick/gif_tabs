@@ -104,4 +104,3 @@ export default {
     return Promise.all(promises).then(() => allGifs);
   }
 };
-

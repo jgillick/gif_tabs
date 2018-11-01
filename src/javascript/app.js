@@ -9,7 +9,6 @@ import $ from 'jquery';
 const UI_NEXT = 1;
 const UI_PREV = -1;
 
-
 /**
   Setup and manage the UI of the page
 */
@@ -23,7 +22,6 @@ const UI_PREV = -1;
       Run the page program
     */
     init () {
-
       // Load from storage, then build page
       Config.load()
       .then(() => Gifs.init())
@@ -45,12 +43,14 @@ const UI_PREV = -1;
 
         // No gifs
         if (gifs.length === 0) {
-          Gifs.loadNewGifs().then(this.showRandomGif.bind(this));
+          Gifs.loadNewGifs().then(() => {
+            this.showRandomGif();
+          });
         }
 
         // Attempt to load existing gif (from location hash)
         else if (id) {
-          console.log('Should gif by ID', id);
+          console.log('Should get gif by ID', id);
           Gifs.getByID(id)
           .then((gif) => {
             this.showGif(gif);
@@ -451,7 +451,6 @@ const UI_PREV = -1;
      * The media item (image, video, iframe) has loaded
      */
     mediaLoaded () {
-      console.log('Media loaded', this.setWindowSizing);
       setTimeout(() => {
         this.setWindowSizing();
       }, 100);
