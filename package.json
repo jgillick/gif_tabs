@@ -1,7 +1,7 @@
 {
   "name": "ss-chrome-tools",
-  "version": "1.0.0",
-  "version_name": "1.0.0",
+  "version": "1.2.0",
+  "version_name": "1.2.0",
   "description": "Gives you a fun new animated gif in every fresh tab",
   "scripts": {
     "build": "gulp",

@@ -51,7 +51,6 @@ h1 {
 */
 .main {
   position: relative;
-  min-height: 200px;
   min-width: 500px;
   margin: 0 auto 20px;
   padding: 0 65px 15px;
@@ -103,7 +102,7 @@ nav .arrow {
   text-indent: -1234em;
   border-top: 60px solid transparent;
   border-bottom: 60px solid transparent;
-  transition: opacity .3s;
+  transition: opacity .3;
 }
 nav .arrow.right {
   right: 0;

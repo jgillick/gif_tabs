@@ -22,7 +22,7 @@ const UI_PREV = -1;
     /**
       Run the page program
     */
-    init: function() {
+    init () {
 
       // Load from storage, then build page
       Config.load()
@@ -50,15 +50,17 @@ const UI_PREV = -1;
 
         // Attempt to load existing gif (from location hash)
         else if (id) {
+          console.log('Should gif by ID', id);
           Gifs.getByID(id)
-          .then((function(gif){
+          .then((gif) => {
             this.showGif(gif);
             this.buildHistory();
             Gifs.loadNewGifs();
-          }).bind(this))
-          .catch((function(){
+          })
+          .catch(() => {
+            console.error('Gif not found', id);
             this.showRandomGif();
-          }).bind(this));
+          });
         }
 
         // Show random gif
@@ -76,7 +78,7 @@ const UI_PREV = -1;
     /**
       Setup the settings panel
     */
-    updateSettings: function() {
+    updateSettings () {
       $('#theme-select').val(Config.settings.theme);
       $('#setting-giphy').attr('checked', Config.settings.giphy);
       $('#setting-imgur').attr('checked', Config.settings.imgur);
@@ -89,7 +91,7 @@ const UI_PREV = -1;
 
       @param {String} name The file name to the stylesheet file for the theme
     */
-    setTheme: function(name) {
+    setTheme (name) {
       var chooser = $('#theme-select');
 
       chooser.val(name);
@@ -101,7 +103,7 @@ const UI_PREV = -1;
     /**
       Select a gif at random and display it
     */
-    showRandomGif: function() {
+    showRandomGif () {
       Gifs.random().then((gif) => {
         Gifs.addToHistory(gif);
         this.showGif(gif);
@@ -113,7 +115,7 @@ const UI_PREV = -1;
 
       @param {Object} gif The gif to show
     */
-    showGif: function(gif) {
+    showGif (gif) {
       var body = $(document.body),
           container = $('section.main'),
           aEl = container.find('a.image'),
@@ -140,17 +142,24 @@ const UI_PREV = -1;
         gif.embed = `<video src="${gif.url}" autoplay loop></video>`;
       }
 
+      // Reset
+      imgEl.hide();
+      embedHTML.hide();
+      embedHTML.empty();
+
       // Embedded HTML
       console.log(gif);
       if (gif.embed && gif.embed.length) {
         embedHTML.html(gif.embed);
         embedHTML.show();
         imgEl.hide();
+        $('#media video').one('loadstart', () => {
+          console.log('Video loaded!');
+          this.mediaLoaded()
+        });
       }
       else {
         imgEl.attr('src', gif.url.replace(/gifv$/i, 'gif'));
-        embedHTML.html('');
-        embedHTML.hide();
         imgEl.show();
       }
 
@@ -216,7 +225,7 @@ const UI_PREV = -1;
       @param {Array} gifs The array of images or image IDs to build from
       @param {HTMLNode} section The HTML section that has the list
     */
-    buildList: function(gifs, section) {
+    buildList (gifs, section) {
       var container = section,
           list = container.find('ul'),
           elements = list.find('li'),
@@ -318,7 +327,7 @@ const UI_PREV = -1;
 
       @return True if the gif is marked as favorite
     */
-    isFavorite: function(){
+    isFavorite (){
       return Gifs.isFavorite(this.currentGif.id).then(function(isFav){
         $('section.main').toggleClass('favorite', isFav);
       });
@@ -327,7 +336,7 @@ const UI_PREV = -1;
     /**
       Update the history selection and arrows
     */
-    updateHistorySelection: function(){
+    updateHistorySelection (){
       var body = $(document.body),
           history = $('section.history'),
           selected = history.find('ul li.selected'),
@@ -356,7 +365,7 @@ const UI_PREV = -1;
     /**
       Build favorites list
     */
-    buildFavorites: function(){
+    buildFavorites (){
       Gifs.getFavorites().then((function(favorites){
         this.buildList(favorites, $('section.favorites'));
       }).bind(this));
@@ -365,7 +374,7 @@ const UI_PREV = -1;
     /**
       Build the history list
     */
-    buildHistory: function() {
+    buildHistory () {
       Gifs.getHistory().then((function(history){
         this.buildList(history, $('section.history'));
         this.updateHistorySelection();
@@ -377,7 +386,7 @@ const UI_PREV = -1;
 
       @param {int} dir The direction to move (UI_NEXT, UI_PREV)
     */
-    historyIncrement: function(dir) {
+    historyIncrement (dir) {
       var list = $('section.history ul'),
           selected = list.find('li.selected').first(),
           target;
@@ -423,7 +432,7 @@ const UI_PREV = -1;
       If there's room  for all content in the viewport add body
       class "fits-view"
     */
-    setWindowSizing: function() {
+    setWindowSizing () {
       var viewport = $(window).height(),
           body = $(document.body);
 
@@ -436,9 +445,19 @@ const UI_PREV = -1;
 
       // Reflow
       void(document.documentElement.offsetHeight);
+    },
+
+    /**
+     * The media item (image, video, iframe) has loaded
+     */
+    mediaLoaded () {
+      console.log('Media loaded', this.setWindowSizing);
+      setTimeout(() => {
+        this.setWindowSizing();
+      }, 100);
     }
 
-  }
+  };
 
   // State Listeners
   messenger.addListener('history-updated', function(){

@@ -236,13 +236,3 @@ nav div:hover {
 
 }
 
-
-/**
-  Fix history to bottom of page
-  if the content is not overflowing
-*/
-body.fits-view .history {
-  position: fixed;
-  left: 0; right: 0;
-  bottom: 0;
-}

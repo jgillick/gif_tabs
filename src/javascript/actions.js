@@ -12,8 +12,6 @@ const UI_PREV = -1;
  */
 export default function initBrowserActions() {
 
-  var errorCount = 0;
-
   /**
     Toggle favorites
   */
@@ -82,12 +80,7 @@ export default function initBrowserActions() {
   /**
     Loaded successfully
   */
-  $('a.image img, a.image video').on('load', function(el){
-    errorCount = 0;
-    setTimeout(() => {
-      UI.setWindowSizing();
-    }, 100);
-  });
+  $('#media img').on('load', () => UI.mediaLoaded());
 
   /**
     Change theme

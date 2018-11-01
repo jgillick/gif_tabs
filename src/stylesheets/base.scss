@@ -5,6 +5,15 @@ html {
 body {
   font: normal 16px "Terminal Dosis", "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   margin: 30px 30px 0 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.main {
+  flex-grow: 1;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 figcaption {
