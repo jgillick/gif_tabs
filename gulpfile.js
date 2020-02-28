@@ -20,42 +20,33 @@ const STATIC_GLOB = [
   `!${SRC}/**/*.scss`,
 ];
 
-/**
- * Run the program
- */
-gulp.task('default', ['build:watch']);
-
-/**
- * Build steps
- */
-gulp.task('build', ['static', 'sass', 'js']);
-gulp.task('build:watch', ['static', 'sass', 'js:watch', 'watch']);
 
 /**
  * Update files when then change
  */
-gulp.task('watch', () => {
-  gulp.watch(STATIC_GLOB, ['static']);
-  gulp.watch(`${SRC}/**/*.scss`, ['sass']);
-});
+const watch = () => {
+  gulp.watch(STATIC_GLOB, staticAssets);
+  gulp.watch(`${SRC}/**/*.scss`, sass);
+};
 
-gulp.task('clean', () => {
-  return del(BUILD +'/*');
-});
+/**
+ * Clean the build directory
+ */
+const clean = () => del(BUILD +'/*');
 
 /**
  * Copy static files over
  */
-gulp.task('static', [], () => {
+const staticAssets =  () => {
   return gulp
     .src(STATIC_GLOB, { base: SRC })
     .pipe(gulp.dest(BUILD));
-});
+};
 
 /**
  * Process SCSS files
  */
-gulp.task('sass', () => {
+const scss = () => {
   return gulp
     .src(`${SRC}/**/*.scss`)
     .pipe(sass().on('error', sass.logError))
@@ -64,13 +55,11 @@ gulp.task('sass', () => {
       title: "Error building SASS",
       message: "<%= error.message %>"
     }));
-});
+};
 
 /**
  * Process JS files through webpack
  */
-gulp.task('js', webpack);
-gulp.task('js:watch', (cb) => webpack(cb, true));
 function webpack(cb, watch=false) {
   const cmd = path.join(__dirname, './node_modules/.bin/', 'webpack');
   const params = ['--color'];
@@ -110,11 +99,13 @@ function webpack(cb, watch=false) {
     callback();
   });
 }
+const js = webpack;
+const jsWatch = (cb) => webpack(cb, true);
 
 /**
  * Create chrome extension
  */
-gulp.task('dist', ['build'], (cb) => {
+const dist = (cb) => {
   const updateFile = 'update.xml';
   const extFile =  'gif_tabs.crx';
   const codebase = 'https://github.com/jgillick/gif_tabs/dist/'+ extFile;
@@ -131,4 +122,26 @@ gulp.task('dist', ['build'], (cb) => {
     fs.writeFile(path.join(DIST, updateFile), updateXML);
     fs.writeFile(path.join(DIST, extFile), crxBuffer, cb);
   });
-});
+}
+
+/**
+ * Build task
+ */
+const build = gulp.series(
+  clean,
+  gulp.parallel(staticAssets, scss, js),
+);
+
+/**
+ * Define tasks
+ */
+exports.clean = clean;
+exports.dist = dist;
+
+exports.buildWatch = gulp.series(
+  clean,
+  gulp.parallel(staticAssets, scss, jsWatch, watch),
+);
+
+exports.build = build;
+exports.default = build;

@@ -54,7 +54,7 @@ export default {
     var embeddable = data.mp4 || data.webm || data.gifv;
     if (embeddable){
       gif.url = embeddable;
-      gif.embed = `<video src="${embeddable}" autoplay loop></video>`;
+      gif.embed = `<video src="${embeddable}" autoplay loop controls muted></video>`;
     }
 
     // Broken thumbnail

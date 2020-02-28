@@ -49,7 +49,7 @@ export default {
       }
       if (video) {
         gif.embed = `
-          <video autoplay loop>
+          <video autoplay loop controls muted>
             <source src="${video.dash_url}" />
             <source src="${video.fallback_url}" />
           </video>`;

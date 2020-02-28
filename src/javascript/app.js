@@ -139,7 +139,7 @@ const UI_PREV = -1;
 
       // Embed gifv's
       if(!gif.embed && gif.url.match(/\.gifv$/i)) {
-        gif.embed = `<video src="${gif.url}" autoplay loop></video>`;
+        gif.embed = `<video src="${gif.url}" autoplay loop controls muted></video>`;
       }
 
       // Reset

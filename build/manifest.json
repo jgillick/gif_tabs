@@ -3,7 +3,7 @@
 
   "name": "GIF Tabs",
   "description": "Gives you a fun new animated gif in every fresh tab",
-  "version": "1.2",
+  "version": "1.2.1",
   "chrome_url_overrides": {
     "newtab": "newtab.html"
   },
